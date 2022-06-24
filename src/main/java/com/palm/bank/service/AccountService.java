@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 @Service
 public interface AccountService {
 
-    AccountEntity create(String name, String password);
+    AccountEntity saveOne(String name, String password, String address);
 
     AccountEntity findByName(String name);
 }

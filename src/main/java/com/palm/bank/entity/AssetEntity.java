@@ -14,8 +14,8 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "balances")
-public class BalanceEntity {
+@Table(name = "assets")
+public class AssetEntity {
 
     @Id
     @Column(nullable = false, length = 32)

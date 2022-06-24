@@ -25,6 +25,6 @@ public class AccountEntity {
     @Column(nullable = true, length = 32)
     private String password;
 
-    @Column(nullable = false, length = 32)
+    @Column(nullable = false, length = 64)
     private String address; // wallet address on blockchain
 }
