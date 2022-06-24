@@ -15,3 +15,7 @@ spring:
     driverClassName: org.h2.Driver
   jpa:
     spring.jpa.database-platform: org.hibernate.dialect.H2Dialect
+
+bank:
+  rpc: http://localhost:7545
+  keystore-path: ./keystore
