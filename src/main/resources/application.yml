@@ -19,3 +19,8 @@ spring:
 bank:
   rpc: http://localhost:7545
   keystore-path: ./keystore
+  fee-in-percent: 3 # 0.03%
+  gas-speed-up: 0 # 0.00%
+  gas-limit: 40000
+  withdraw-wallet-keystore: UTC--2019-08-13T06-24-07.378035684Z--672881426632b13d8f474664c039acc7b5610b7.json
+  withdraw-wallet-password: 1234567890

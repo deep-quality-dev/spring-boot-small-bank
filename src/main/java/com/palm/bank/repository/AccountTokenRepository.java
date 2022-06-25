@@ -11,4 +11,7 @@ public interface AccountTokenRepository extends JpaRepository<AccountTokenEntity
 
     @Query(value = "SELECT * FROM account_tokens at WHERE at.accountId = :accountId", nativeQuery = true)
     AccountTokenEntity findByAccountId(@Param("accountId") Long accountId);
+    
+    @Query(value = "SELECT * FROM account_tokens at WHERE at.token = :token", nativeQuery = true)
+    AccountTokenEntity findByToken(@Param("token") String token);
 }

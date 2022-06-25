@@ -11,4 +11,7 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Long> {
 
     @Query(value = "SELECT * FROM accounts a WHERE a.name = :name", nativeQuery = true)
     AccountEntity findByName(@Param("name") String name);
+
+    @Query(value = "SELECT * FROM accounts a WHERE a.address = :address", nativeQuery = true)
+    AccountEntity findByAddress(@Param("address") String address);
 }

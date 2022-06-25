@@ -48,4 +48,16 @@ public class LoginServiceImpl implements LoginService {
 
         return null;
     }
+
+    @Override
+    public AccountTokenEntity isValid(String token) {
+        AccountTokenEntity accountTokenEntity = accountTokenRepository.findByToken(token);
+        if (accountTokenEntity == null || accountTokenEntity.getExpireTime() == null) {
+            return null;
+        }
+        if (accountTokenEntity.getExpireTime().before(new Date())) {
+            return null;
+        }
+        return accountTokenEntity;
+    }
 }

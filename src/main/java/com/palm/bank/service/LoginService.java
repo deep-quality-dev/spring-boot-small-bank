@@ -7,4 +7,6 @@ import org.springframework.stereotype.Service;
 public interface LoginService {
 
     AccountTokenEntity login(String name, String password);
+
+    AccountTokenEntity isValid(String token);
 }

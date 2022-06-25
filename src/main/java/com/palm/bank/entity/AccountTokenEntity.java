@@ -23,7 +23,7 @@ public class AccountTokenEntity {
     @Column(nullable = false)
     private Long accountId;
 
-    @Column(nullable = false, length = 32)
+    @Column(nullable = false, length = 32, unique = true)
     private String token;
 
     @Column(nullable = false)
