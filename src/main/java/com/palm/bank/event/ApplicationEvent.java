@@ -1,6 +1,8 @@
 package com.palm.bank.event;
 
+import com.palm.bank.component.EtherWatcher;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Service;
@@ -11,8 +13,16 @@ import java.io.Console;
 @Service
 public class ApplicationEvent implements ApplicationListener<ContextRefreshedEvent> {
 
+    @Autowired
+    private EtherWatcher etherWatcher;
+
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
         log.info("onApplicationEvent" + event.toString());
+
+        try {
+            etherWatcher.setCurrentBlockNumber(etherWatcher.getBlockNumber());
+            new Thread(etherWatcher).start();
+        } catch (Exception ex) {}
     }
 }

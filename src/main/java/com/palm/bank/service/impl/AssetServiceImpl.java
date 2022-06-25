@@ -4,6 +4,7 @@ import com.palm.bank.config.BankConfig;
 import com.palm.bank.entity.AccountEntity;
 import com.palm.bank.service.AccountService;
 import com.palm.bank.service.AssetService;
+import com.palm.bank.util.TokenGenerator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -51,8 +52,7 @@ public class AssetServiceImpl implements AssetService {
     @Override
     public String transfer(AccountEntity from, AccountEntity to, BigDecimal amount, BigDecimal fee) {
         from.setBalance(from.getBalance().subtract(amount.add(fee)));
-        // todo, generate txHash
-        return "txHash";
+        return TokenGenerator.generate(String.format("%s%s%d", from.getAddress(), to.getAddress(), amount.toString()));
     }
 
     @Override

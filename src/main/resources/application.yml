@@ -9,7 +9,7 @@ spring:
       settings.trace: false
     spring.h2.console.settings.web-allow-others: false
   datasource:
-    url: jdbc:h2:mem:./bankdb
+    url: jdbc:h2:mem:bankdb
     username: sa
     password: password
     driverClassName: org.h2.Driver
@@ -17,7 +17,7 @@ spring:
     spring.jpa.database-platform: org.hibernate.dialect.H2Dialect
 
 bank:
-  rpc: http://localhost:7545
+  rpc: http://localhost:8545
   keystore-path: ./keystore
   fee-in-percent: 3 # 0.03%
   gas-speed-up: 0 # 0.00%

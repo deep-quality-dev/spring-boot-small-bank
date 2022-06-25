@@ -81,13 +81,13 @@ public class BankController {
     }
 
     @GetMapping("/balance/{address}")
-    public ApiResult<BigDecimal> getBalance(@PathVariable String address) throws IOException {
+    public ApiResult<String> getBalance(@PathVariable String address) throws IOException {
         BigDecimal balance = assetService.getBalance(address);
-        return ApiResult.result(ApiCode.SUCCESS, EtherConvert.fromWei(balance, Unit.ETHER));
+        return ApiResult.result(ApiCode.SUCCESS, EtherConvert.fromWei(balance, Unit.ETHER).toString());
     }
 
     @GetMapping("/internal-balance/{address}")
-    public ApiResult<BigDecimal> getInternalBalance(@PathVariable String address, HttpServletRequest request) throws IOException {
+    public ApiResult<String> getInternalBalance(@PathVariable String address, HttpServletRequest request) throws IOException {
         String accountToken = request.getHeader("Token");
         AccountTokenEntity accountTokenEntity = loginService.isValid(accountToken);
         if (accountTokenEntity == null) {
@@ -98,7 +98,7 @@ public class BankController {
         if (accountEntity == null) {
             return ApiResult.internalError();
         }
-        return ApiResult.result(ApiCode.SUCCESS, EtherConvert.fromWei(accountEntity.getBalance(), Unit.ETHER));
+        return ApiResult.result(ApiCode.SUCCESS, EtherConvert.fromWei(accountEntity.getBalance(), Unit.ETHER).toString());
     }
 
     @GetMapping("/transfer")
@@ -118,6 +118,7 @@ public class BankController {
             return ApiResult.result(ApiCode.NOT_REGISTERED_ACCOUNT, null);
         }
 
+        log.info("Balance: {} > {}", fromAccount.getBalance().toString(), amount.toString());
         if (fromAccount.getBalance().compareTo(amount) < 0) {
             return ApiResult.result(ApiCode.NOT_ENOUGH_BALANCE, null);
         }
