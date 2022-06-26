@@ -13,7 +13,6 @@ import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthBlockNumber;
 import org.web3j.protocol.core.methods.response.Transaction;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 

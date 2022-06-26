@@ -22,7 +22,7 @@ public class BankConfig {
     private Integer feeInPercent;
 
     private Integer gasSpeedUp;
-    
+
     private BigInteger gasLimit;
 
     private String withdrawWalletKeystore;

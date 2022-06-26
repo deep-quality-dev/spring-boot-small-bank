@@ -1,14 +1,11 @@
 package com.palm.bank.service;
 
-import com.palm.bank.dto.TransactionDto;
 import com.palm.bank.entity.AccountEntity;
 import org.springframework.stereotype.Service;
 import org.web3j.crypto.CipherException;
-import org.web3j.crypto.Credentials;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;

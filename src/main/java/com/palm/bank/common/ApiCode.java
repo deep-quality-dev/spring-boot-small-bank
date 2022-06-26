@@ -30,14 +30,14 @@ public enum ApiCode {
     }
 
     public static ApiCode getApiCode(int code) {
-       ApiCode[] codes = ApiCode.values();
+        ApiCode[] codes = ApiCode.values();
 
-       for (ApiCode ec : codes) {
-           if (ec.getCode() == code) {
-               return ec;
-           }
-       }
+        for (ApiCode ec : codes) {
+            if (ec.getCode() == code) {
+                return ec;
+            }
+        }
 
-       return SUCCESS;
+        return SUCCESS;
     }
 }

@@ -7,8 +7,6 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Service;
 
-import java.io.Console;
-
 @Slf4j
 @Service
 public class ApplicationEvent implements ApplicationListener<ContextRefreshedEvent> {
@@ -23,6 +21,8 @@ public class ApplicationEvent implements ApplicationListener<ContextRefreshedEve
         try {
             etherWatcher.setCurrentBlockNumber(etherWatcher.getBlockNumber());
             new Thread(etherWatcher).start();
-        } catch (Exception ex) {}
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
     }
 }

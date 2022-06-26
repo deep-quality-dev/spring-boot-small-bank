@@ -6,21 +6,12 @@ import com.palm.bank.repository.AccountRepository;
 import com.palm.bank.service.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.web3j.crypto.CipherException;
-import org.web3j.crypto.Credentials;
-import org.web3j.crypto.WalletUtils;
 
-import java.io.File;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.util.List;
 
 @Service("accountService")
 public class AccountServiceImpl implements AccountService {
-    
+
     @Autowired
     private final BankConfig bankConfig;
 

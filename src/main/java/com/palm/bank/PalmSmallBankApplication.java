@@ -8,8 +8,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 @SpringBootApplication
 public class PalmSmallBankApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(PalmSmallBankApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(PalmSmallBankApplication.class, args);
+    }
 
 }
