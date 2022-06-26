@@ -82,7 +82,7 @@ public class EtherWatcher implements Runnable {
             long blockNumber = getBlockNumber();
             long startBlockNumber = currentBlockNumber + 1;
             currentBlockNumber = blockNumber - currentBlockNumber > step ? currentBlockNumber + step : blockNumber;
-            log.info("check blocks: {} - {}", startBlockNumber, currentBlockNumber);
+
             List<DepositEntity> deposits = replayBlock(startBlockNumber, currentBlockNumber);
             if (deposits != null) {
                 for (DepositEntity deposit : deposits) {

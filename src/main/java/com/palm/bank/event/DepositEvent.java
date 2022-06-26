@@ -8,6 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
+
 @Slf4j
 @Component
 public class DepositEvent {
@@ -26,13 +28,13 @@ public class DepositEvent {
     public synchronized void onConfirmed(DepositEntity depositEntity) {
         if (!depositService.exists(depositEntity)) {
             log.info("confirmed deposit: txHash={}, address={}, amount={}", depositEntity.getTxHash(), depositEntity.getAddress(), depositEntity.getAmount().toString());
-//            depositService.save(depositEntity);
+            depositService.save(depositEntity);
 
             AccountEntity accountEntity = accountService.findByAddress(depositEntity.getAddress());
             if (accountEntity != null) {
-                log.info("updated account balance: address={}, amount={}", accountEntity.getAddress(), accountEntity.getBalance());
-                accountEntity.setBalance(accountEntity.getBalance().add(depositEntity.getAmount()));
+                accountEntity.setBalance(accountEntity.getBalance().add(new BigDecimal(depositEntity.getAmount())));
                 accountService.save(accountEntity);
+                log.info("updated account balance: address={}, amount={}", accountEntity.getAddress(), accountEntity.getBalance());
             }
         }
     }

@@ -9,8 +9,6 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import java.math.BigDecimal;
-import java.util.Date;
 
 @Getter
 @Builder
@@ -21,32 +19,18 @@ import java.util.Date;
 public class DepositEntity {
 
     @Id
-    @Column(nullable = false, length = 64)
+    @Column(nullable = false, length = 128)
     private String txHash;
 
-    @Column(nullable = false, length = 32)
+    @Column(nullable = false, length = 128)
     private String blockHash;
 
     @Column(nullable = false)
     private Long blockNumber;
 
-    @Column(nullable = false)
-    private Date time;
-
-    @Column(nullable = false)
+    @Column(nullable = false, length = 64)
     private String amount;
 
-    @Column(nullable = false, length = 32)
+    @Column(nullable = false, length = 64)
     private String address;
-
-    @Column(nullable = false)
-    private int status;
-
-    public BigDecimal getAmount() {
-        return new BigDecimal(amount);
-    }
-
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount.toString();
-    }
 }

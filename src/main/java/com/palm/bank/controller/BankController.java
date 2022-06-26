@@ -134,7 +134,7 @@ public class BankController {
 
             BigDecimal fee = amount.multiply(new BigDecimal(bankConfig.getFeeInPercent())).divide(BigDecimal.TEN.pow(4));
             amount = amount.subtract(fee);
-            log.info("internal-transfer: to={}, amount={}, fee={}, request={}", to, amount.toString(), fee.toString());
+            log.info("internal-transfer: to={}, amount={}, fee={}", to, amount.toString(), fee.toString());
 
             // Move balance within database
             String txHash = assetService.internalTransfer(fromAccount, to, amount, fee);
@@ -162,8 +162,7 @@ public class BankController {
             if (assetService.getBalance(accountEntity.getAddress()).compareTo(amount) < 0) {
                 return ApiResult.result(ApiCode.NOT_ENOUGH_BALANCE, null);
             }
-
-            log.info("deposit: from={}, amount={}, request={}", accountEntity.getAddress(), amount.toString(), fee.toString());
+            log.info("deposit: from={}, amount={}", accountEntity.getAddress(), amount.toString());
 
             // Transfer tokens from Withdraw wallet to current account on blockchains
             String txHash = assetService.deposit(accountEntity, amount);
