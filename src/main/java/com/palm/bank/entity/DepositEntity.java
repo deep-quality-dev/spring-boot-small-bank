@@ -34,11 +34,19 @@ public class DepositEntity {
     private Date time;
 
     @Column(nullable = false)
-    private BigDecimal amount;
+    private String amount;
 
     @Column(nullable = false, length = 32)
     private String address;
 
     @Column(nullable = false)
     private int status;
+
+    public BigDecimal getAmount() {
+        return new BigDecimal(amount);
+    }
+
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount.toString();
+    }
 }

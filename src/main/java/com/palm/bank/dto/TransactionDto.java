@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class TransferDto {
+public class TransactionDto {
 
     private String txHash;
 }

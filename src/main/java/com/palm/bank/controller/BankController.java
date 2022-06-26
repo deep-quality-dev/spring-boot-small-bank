@@ -2,11 +2,11 @@ package com.palm.bank.controller;
 
 import com.palm.bank.common.ApiCode;
 import com.palm.bank.common.ApiResult;
-import com.palm.bank.common.Unit;
 import com.palm.bank.config.BankConfig;
+import com.palm.bank.dto.AccountDto;
 import com.palm.bank.dto.CreateAccountDto;
 import com.palm.bank.dto.LoginDto;
-import com.palm.bank.dto.TransferDto;
+import com.palm.bank.dto.TransactionDto;
 import com.palm.bank.entity.AccountEntity;
 import com.palm.bank.entity.AccountTokenEntity;
 import com.palm.bank.param.CreateAccountParam;
@@ -14,12 +14,12 @@ import com.palm.bank.param.LoginParam;
 import com.palm.bank.service.AccountService;
 import com.palm.bank.service.AssetService;
 import com.palm.bank.service.LoginService;
-import com.palm.bank.util.EtherConvert;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.web3j.crypto.CipherException;
+import org.web3j.utils.Convert;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -27,6 +27,8 @@ import java.math.BigDecimal;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -60,9 +62,9 @@ public class BankController {
         if (accountEntity != null) {
             return ApiResult.result(ApiCode.ALREADY_EXIST_ACCOUNT, CreateAccountDto.builder().address(accountEntity.getAddress()).build());
         }
-        
+
         try {
-            accountEntity = accountService.saveOne(param.getName(), param.getPassword());
+            accountEntity = assetService.createNewWallet(param.getName(), param.getPassword());
             return ApiResult.result(ApiCode.SUCCESS, CreateAccountDto.builder().address(accountEntity.getAddress()).build());
         } catch (Exception ex) {
             return ApiResult.internalError();
@@ -80,14 +82,21 @@ public class BankController {
         return ApiResult.result(ApiCode.SUCCESS, LoginDto.builder().token(accountTokenEntity.getToken()).build());
     }
 
+    @GetMapping("/accounts")
+    public ApiResult<List<AccountDto>> getAccounts() {
+        log.info("accounts");
+
+        return ApiResult.result(ApiCode.SUCCESS, accountService.findAll().stream().map(accountEntity -> AccountDto.builder().name(accountEntity.getName()).address(accountEntity.getAddress()).balance(accountEntity.getBalance().toString()).build()).collect(Collectors.toList()));
+    }
+
     @GetMapping("/balance/{address}")
     public ApiResult<String> getBalance(@PathVariable String address) throws IOException {
         BigDecimal balance = assetService.getBalance(address);
-        return ApiResult.result(ApiCode.SUCCESS, EtherConvert.fromWei(balance, Unit.ETHER).toString());
+        return ApiResult.result(ApiCode.SUCCESS, Convert.fromWei(balance, Convert.Unit.ETHER).toString());
     }
 
-    @GetMapping("/internal-balance/{address}")
-    public ApiResult<String> getInternalBalance(@PathVariable String address, HttpServletRequest request) throws IOException {
+    @GetMapping("/internal-balance")
+    public ApiResult<String> getInternalBalance(HttpServletRequest request) throws IOException {
         String accountToken = request.getHeader("Token");
         AccountTokenEntity accountTokenEntity = loginService.isValid(accountToken);
         if (accountTokenEntity == null) {
@@ -96,13 +105,13 @@ public class BankController {
 
         AccountEntity accountEntity = accountService.findById(accountTokenEntity.getAccountId());
         if (accountEntity == null) {
-            return ApiResult.internalError();
+            return ApiResult.result(ApiCode.NOT_FOUND_ACCOUNT, null);
         }
-        return ApiResult.result(ApiCode.SUCCESS, EtherConvert.fromWei(accountEntity.getBalance(), Unit.ETHER).toString());
+        return ApiResult.result(ApiCode.SUCCESS, Convert.fromWei(accountEntity.getBalance(), Convert.Unit.ETHER).toString());
     }
 
     @GetMapping("/transfer")
-    public ApiResult<TransferDto> transfer(String to, BigDecimal amount, HttpServletRequest request) {
+    public ApiResult<TransactionDto> transfer(String to, BigDecimal amount, HttpServletRequest request) {
         String accountToken = request.getHeader("Token");
         AccountTokenEntity accountTokenEntity = loginService.isValid(accountToken);
         if (accountTokenEntity == null) {
@@ -111,29 +120,62 @@ public class BankController {
 
         AccountEntity fromAccount = accountService.findById(accountTokenEntity.getAccountId());
         if (fromAccount == null) {
+            return ApiResult.result(ApiCode.NOT_FOUND_ACCOUNT, null);
+        }
+        try {
+            if (!to.equalsIgnoreCase(bankConfig.getWithdrawWallet().getAddress()) && accountService.findByAddress(to) == null) {
+                return ApiResult.result(ApiCode.NOT_REGISTERED_ACCOUNT, null);
+            }
+
+            log.info("Balance: {} > {}", fromAccount.getBalance().toString(), amount.toString());
+            if (fromAccount.getBalance().compareTo(amount) < 0) {
+                return ApiResult.result(ApiCode.NOT_ENOUGH_BALANCE, null);
+            }
+
+            BigDecimal fee = amount.multiply(new BigDecimal(bankConfig.getFeeInPercent())).divide(BigDecimal.TEN.pow(4));
+            amount = amount.subtract(fee);
+            log.info("internal-transfer: to={}, amount={}, fee={}, request={}", to, amount.toString(), fee.toString());
+
+            // Move balance within database
+            String txHash = assetService.internalTransfer(fromAccount, to, amount, fee);
+            return ApiResult.result(ApiCode.SUCCESS, TransactionDto.builder().txHash(txHash).build());
+        } catch (Exception ex) {
+            ex.printStackTrace();
             return ApiResult.internalError();
         }
-        AccountEntity toAccount = accountService.findByAddress(to);
-        if (fromAccount == null) {
-            return ApiResult.result(ApiCode.NOT_REGISTERED_ACCOUNT, null);
+    }
+
+    @GetMapping("/deposit")
+    public ApiResult<TransactionDto> deposit(BigDecimal amount, HttpServletRequest request) {
+        String accountToken = request.getHeader("Token");
+        AccountTokenEntity accountTokenEntity = loginService.isValid(accountToken);
+        if (accountTokenEntity == null) {
+            return ApiResult.result(ApiCode.INVALID_TOKEN, null);
         }
 
-        log.info("Balance: {} > {}", fromAccount.getBalance().toString(), amount.toString());
-        if (fromAccount.getBalance().compareTo(amount) < 0) {
-            return ApiResult.result(ApiCode.NOT_ENOUGH_BALANCE, null);
+        AccountEntity accountEntity = accountService.findById(accountTokenEntity.getAccountId());
+        if (accountEntity == null) {
+            return ApiResult.result(ApiCode.NOT_FOUND_ACCOUNT, null);
         }
 
-        BigDecimal fee = amount.multiply(new BigDecimal(bankConfig.getFeeInPercent())).divide(BigDecimal.TEN.pow(4));
-        log.info("internal-transfer: to={}, amount={}, fee={}, request={}", to, amount.toString(), fee.toString());
+        try {
+            if (assetService.getBalance(accountEntity.getAddress()).compareTo(amount) < 0) {
+                return ApiResult.result(ApiCode.NOT_ENOUGH_BALANCE, null);
+            }
 
-        // Move balance within database
-        String txHash = assetService.transfer(fromAccount, toAccount, amount, fee);
-        accountService.update(fromAccount);
-        return ApiResult.result(ApiCode.SUCCESS, TransferDto.builder().txHash(txHash).build());
+            log.info("deposit: from={}, amount={}, request={}", accountEntity.getAddress(), amount.toString(), fee.toString());
+
+            // Transfer tokens from Withdraw wallet to current account on blockchains
+            String txHash = assetService.deposit(accountEntity, amount);
+            return ApiResult.result(ApiCode.SUCCESS, TransactionDto.builder().txHash(txHash).build());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return ApiResult.internalError();
+        }
     }
 
     @GetMapping("/withdraw")
-    public ApiResult<TransferDto> withdraw(BigDecimal amount, HttpServletRequest request) {
+    public ApiResult<TransactionDto> withdraw(BigDecimal amount, HttpServletRequest request) {
         String accountToken = request.getHeader("Token");
         AccountTokenEntity accountTokenEntity = loginService.isValid(accountToken);
         if (accountTokenEntity == null) {
@@ -149,11 +191,17 @@ public class BankController {
             return ApiResult.result(ApiCode.NOT_ENOUGH_BALANCE, null);
         }
 
-        BigDecimal fee = amount.multiply(new BigDecimal(bankConfig.getFeeInPercent())).divide(BigDecimal.TEN.pow(4));
-        log.info("withdraw: to={}, amount={}, fee={}, request={}", accountEntity.getAddress(), amount.toString(), fee.toString());
+        try {
+            BigDecimal fee = amount.multiply(new BigDecimal(bankConfig.getFeeInPercent())).divide(BigDecimal.TEN.pow(4));
+            amount = amount.subtract(fee);
+            log.info("withdraw: to={}, amount={}, fee={}, request={}", accountEntity.getAddress(), amount.toString(), fee.toString());
 
-        // Transfer tokens from Withdraw wallet to current account on blockchains
-        String txHash = assetService.withdraw(accountEntity, amount, fee);
-        return ApiResult.result(ApiCode.SUCCESS, TransferDto.builder().txHash(txHash).build());
+            // Transfer tokens from Withdraw wallet to current account on blockchains
+            String txHash = assetService.withdraw(accountEntity, amount, fee);
+            return ApiResult.result(ApiCode.SUCCESS, TransactionDto.builder().txHash(txHash).build());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return ApiResult.internalError();
+        }
     }
 }

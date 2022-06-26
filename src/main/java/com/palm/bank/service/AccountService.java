@@ -8,13 +8,14 @@ import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.util.List;
 
 @Service
 public interface AccountService {
-
-    AccountEntity saveOne(String name, String password) throws NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException, CipherException, IOException;
     
-    boolean update(AccountEntity accountEntity);
+    boolean save(AccountEntity accountEntity);
+
+    List<AccountEntity> findAll();
 
     AccountEntity findById(Long accountId);
 

@@ -30,5 +30,13 @@ public class AccountEntity {
     private String address; // wallet address on blockchain
 
     @Column(nullable = true)
-    private BigDecimal balance;
+    private String balance;
+
+    public BigDecimal getBalance() {
+        return new BigDecimal(balance);
+    }
+
+    public void setBalance(BigDecimal balance) {
+        this.balance = balance.toString();
+    }
 }

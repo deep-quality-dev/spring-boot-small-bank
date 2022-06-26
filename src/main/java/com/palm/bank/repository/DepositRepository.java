@@ -10,6 +10,6 @@ import org.springframework.stereotype.Repository;
 @Repository("depositRepository")
 public interface DepositRepository extends JpaRepository<DepositEntity, Long> {
 
-    @Query(value = "SELECT * FROM deposits d WHERE d.txHash = :txHash", nativeQuery = true)
+    @Query(value = "SELECT * FROM deposits d WHERE d.tx_hash = :txHash", nativeQuery = true)
     DepositEntity findByHash(String txHash);
 }

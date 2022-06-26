@@ -22,5 +22,6 @@ bank:
   fee-in-percent: 3 # 0.03%
   gas-speed-up: 0 # 0.00%
   gas-limit: 40000
-  withdraw-wallet-keystore: UTC--2019-08-13T06-24-07.378035684Z--672881426632b13d8f474664c039acc7b5610b7.json
-  withdraw-wallet-password: 1234567890
+  withdraw-wallet-keystore: UTC--2022-06-26T12-18-27.288453000Z--50b67b5c76b1268887f341707c95d36640870fa2.json
+  withdraw-wallet-password: password
+  withdraw-wallet-address: 0x50b67b5c76b1268887f341707c95d36640870fa2

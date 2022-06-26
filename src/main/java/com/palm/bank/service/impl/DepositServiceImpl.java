@@ -1,8 +1,6 @@
 package com.palm.bank.service.impl;
 
-import com.palm.bank.config.BankConfig;
 import com.palm.bank.entity.DepositEntity;
-import com.palm.bank.repository.AccountRepository;
 import com.palm.bank.repository.DepositRepository;
 import com.palm.bank.service.DepositService;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -38,13 +38,13 @@ public class LoginServiceImpl implements LoginService {
         }
 
         if (accountEntity.getPassword().compareTo(password) == 0) {
-            log.info("Not match password for account: {}", name);
             String token = TokenGenerator.generate();
             Date expireTime = new Date(new Date().getTime() + EXPIRE_TIME);
             AccountTokenEntity accountTokenEntity = AccountTokenEntity.builder().accountId(accountEntity.getId()).token(token).expireTime(expireTime).build();
             accountTokenRepository.save(accountTokenEntity);
             return accountTokenEntity;
         }
+        log.info("Not match password for account: {}", name);
 
         return null;
     }

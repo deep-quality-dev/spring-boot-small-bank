@@ -1,19 +1,19 @@
 package com.palm.bank.component;
 
-import com.palm.bank.common.Unit;
+import com.palm.bank.config.BankConfig;
 import com.palm.bank.entity.DepositEntity;
 import com.palm.bank.event.DepositEvent;
-import com.palm.bank.util.EtherConvert;
+import com.palm.bank.service.AssetService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameterNumber;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthBlockNumber;
 import org.web3j.protocol.core.methods.response.Transaction;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,19 +22,36 @@ import java.util.List;
 public class EtherWatcher implements Runnable {
 
     @Autowired
+    private final BankConfig bankConfig;
+
+    @Autowired
     private final Web3j web3j;
+
+    @Autowired
+    private final AssetService assetService;
 
     @Autowired
     private final DepositEvent depositEvent;
 
     private final int CHECK_INTERVAL = 2000;
 
+    private String withdrawWallet;
+
     private Long currentBlockNumber = 0L;
     private int step = 5;
 
-    public EtherWatcher(Web3j web3j, DepositEvent depositEvent) {
+    public EtherWatcher(BankConfig bankConfig, Web3j web3j, AssetService assetService, DepositEvent depositEvent) {
+        this.bankConfig = bankConfig;
         this.web3j = web3j;
+        this.assetService = assetService;
         this.depositEvent = depositEvent;
+
+        try {
+            this.withdrawWallet = bankConfig.getWithdrawWallet().getAddress();
+        } catch (Exception ex) {
+            this.withdrawWallet = null;
+        }
+        log.info("withdraw wallet = {}", this.withdrawWallet);
     }
 
     public void setCurrentBlockNumber(Long blockNumber) {
@@ -86,16 +103,18 @@ public class EtherWatcher implements Runnable {
                 block.getBlock().getTransactions().stream().forEach(transactionResult -> {
                     EthBlock.TransactionObject transactionObject = (EthBlock.TransactionObject) transactionResult;
                     Transaction transaction = transactionObject.get();
-                    if (transaction.getTo() != null && transaction.getTo().length() > 0) {
+                    if (transaction.getTo() != null && transaction.getTo().equalsIgnoreCase(withdrawWallet)) {
                         DepositEntity depositEntity = DepositEntity.builder()
                                 .txHash(transaction.getHash())
                                 .blockNumber(transaction.getBlockNumber().longValue())
                                 .blockHash(transaction.getBlockHash())
-                                .amount(EtherConvert.fromWei(transaction.getValue().toString(), Unit.ETHER))
+                                .amount(transaction.getValue().toString())
+                                .address(transaction.getFrom())
                                 .build();
                         deposits.add(depositEntity);
-                        log.info("received deposit at block: txHash={}, amount={}, blockNumber={}",
+                        log.info("received deposit at block: txHash={}, from={}, amount={}, blockNumber={}",
                                 depositEntity.getTxHash(),
+                                depositEntity.getAddress(),
                                 depositEntity.getAmount(),
                                 depositEntity.getBlockNumber());
                     }

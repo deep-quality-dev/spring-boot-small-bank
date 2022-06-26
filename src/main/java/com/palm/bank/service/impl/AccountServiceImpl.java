@@ -16,6 +16,7 @@ import java.math.BigDecimal;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.util.List;
 
 @Service("accountService")
 public class AccountServiceImpl implements AccountService {
@@ -32,19 +33,14 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public AccountEntity saveOne(String name, String password) throws NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException, CipherException, IOException {
-        String filename = WalletUtils.generateNewWalletFile(password, new File(bankConfig.getKeystorePath()), true);
-        Credentials credentials = WalletUtils.loadCredentials(password, bankConfig.getKeystorePath() + "/" + filename);
-        String address = credentials.getAddress();
-        
-        AccountEntity accountEntity = AccountEntity.builder().name(name).password(password).filename(filename).address(address).balance(BigDecimal.ZERO).build();
-        return accountRepository.save(accountEntity);
+    public boolean save(AccountEntity accountEntity) {
+        accountRepository.save(accountEntity);
+        return true;
     }
 
     @Override
-    public boolean update(AccountEntity accountEntity) {
-        accountRepository.save(accountEntity); // todo, should check
-        return true;
+    public List<AccountEntity> findAll() {
+        return accountRepository.findAll();
     }
 
     @Override
