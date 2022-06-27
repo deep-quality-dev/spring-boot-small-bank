@@ -45,6 +45,6 @@ public class BankConfig {
     private String withdrawWalletPassword;
 
     public Credentials getWithdrawWallet() throws IOException, CipherException {
-        return WalletUtils.loadCredentials(withdrawWalletPassword, keystorePath + "/" + withdrawWalletKeystore);
+        return WalletUtils.loadCredentials(withdrawWalletPassword, withdrawWalletKeystore);
     }
 }

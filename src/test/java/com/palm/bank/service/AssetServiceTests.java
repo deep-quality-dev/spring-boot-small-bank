@@ -72,7 +72,7 @@ public class AssetServiceTests {
                 .password("password")
                 .address("address")
                 .filename("filename")
-                .balance("1000")
+                .balance(BigDecimal.TEN.pow(18).toString())
                 .build();
 
         AccountEntity to = AccountEntity.builder()
@@ -80,12 +80,12 @@ public class AssetServiceTests {
                 .password("password1")
                 .address("address1")
                 .filename("filename1")
-                .balance("2000")
+                .balance(BigDecimal.TEN.pow(18).multiply(new BigDecimal(2)).toString())
                 .build();
 
-        String hash = assetService.internalTransfer(from, to, new BigDecimal(1000), BigDecimal.ZERO);
+        String hash = assetService.internalTransfer(from, to, BigDecimal.TEN.pow(18), BigDecimal.ZERO);
         Assert.assertEquals(from.getBalance(), BigDecimal.ZERO);
-        Assert.assertEquals(to.getBalance(), new BigDecimal(3000));
+        Assert.assertEquals(to.getBalance(), BigDecimal.TEN.pow(18).multiply(new BigDecimal(3)));
         Assert.assertNotNull(hash);
     }
 

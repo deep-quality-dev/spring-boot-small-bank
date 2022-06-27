@@ -15,7 +15,7 @@ import java.util.List;
 public interface AssetService {
 
     /**
-     * Get the balance by address in bank
+     * Get the balance by address in bank, in Wei unit
      * @param address
      * @return account balance
      * @throws IOException
@@ -39,8 +39,8 @@ public interface AssetService {
      * Move balance in bank, cutting off the fee
      * @param from
      * @param to
-     * @param amount
-     * @param fee
+     * @param amount in wei unit
+     * @param fee in wei unit
      * @return
      */
     String internalTransfer(AccountEntity from, AccountEntity to, BigDecimal amount, BigDecimal fee);
@@ -48,7 +48,7 @@ public interface AssetService {
     /**
      * Deposit tokens, refer: BankController.deposit
      * @param from
-     * @param amount
+     * @param amount in wei unit
      * @return
      */
     String deposit(AccountEntity from, BigDecimal amount);
@@ -56,8 +56,8 @@ public interface AssetService {
     /**
      * Withdraw tokens, refer: BankController.withdraw
      * @param to
-     * @param amount
-     * @param fee
+     * @param amount in wei unit
+     * @param fee in wei unit
      * @return
      */
     String withdraw(AccountEntity to, BigDecimal amount, BigDecimal fee);

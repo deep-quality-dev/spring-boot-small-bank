@@ -70,15 +70,16 @@ public class BankController {
     public ApiResult<CreateAccountDto> createAccount(@Validated @RequestBody CreateAccountParam param) throws CipherException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException, IOException {
         log.info("create account: name={}, password={}", param.getName(), param.getPassword());
 
-        AccountEntity accountEntity = accountService.findByName(param.getName());
-        if (accountEntity != null) {
-            return ApiResult.result(ApiCode.ALREADY_EXIST_ACCOUNT, CreateAccountDto.builder().address(accountEntity.getAddress()).build());
-        }
-
         try {
+            AccountEntity accountEntity = accountService.findByName(param.getName());
+            if (accountEntity != null) {
+                return ApiResult.result(ApiCode.ALREADY_EXIST_ACCOUNT, CreateAccountDto.builder().address(accountEntity.getAddress()).build());
+            }
+
             accountEntity = assetService.createNewWallet(param.getName(), param.getPassword());
             return ApiResult.result(ApiCode.SUCCESS, CreateAccountDto.builder().address(accountEntity.getAddress()).build());
         } catch (Exception ex) {
+            ex.printStackTrace();
             return ApiResult.internalError();
         }
     }
@@ -95,11 +96,17 @@ public class BankController {
     public ApiResult<LoginDto> login(@Validated @RequestBody LoginParam loginParam) {
         log.info("login: name={}, password={}", loginParam.getName(), loginParam.getPassword());
 
-        AccountTokenEntity accountTokenEntity = loginService.login(loginParam.getName(), loginParam.getPassword());
-        if (accountTokenEntity == null) {
-            return ApiResult.result(ApiCode.NOT_FOUND_ACCOUNT, null);
+        try {
+            AccountTokenEntity accountTokenEntity = loginService.login(loginParam.getName(), loginParam.getPassword());
+            if (accountTokenEntity == null) {
+                return ApiResult.result(ApiCode.NOT_FOUND_ACCOUNT, null);
+            }
+
+            return ApiResult.result(ApiCode.SUCCESS, LoginDto.builder().token(accountTokenEntity.getToken()).build());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return ApiResult.internalError();
         }
-        return ApiResult.result(ApiCode.SUCCESS, LoginDto.builder().token(accountTokenEntity.getToken()).build());
     }
 
     /**
@@ -110,11 +117,21 @@ public class BankController {
     public ApiResult<List<AccountDto>> getAccounts() {
         log.info("accounts");
 
-        return ApiResult.result(ApiCode.SUCCESS, accountService.findAll().stream().map(accountEntity -> AccountDto.builder().name(accountEntity.getName()).address(accountEntity.getAddress()).balance(accountEntity.getBalance().toString()).build()).collect(Collectors.toList()));
+        return ApiResult.result(
+                ApiCode.SUCCESS,
+                accountService.findAll()
+                        .stream().map(
+                                accountEntity ->
+                                        AccountDto.builder()
+                                                .name(accountEntity.getName())
+                                                .address(accountEntity.getAddress())
+                                                .balance(Convert.fromWei(accountEntity.getBalance(), Convert.Unit.ETHER).toString())
+                                                .build()
+                        ).collect(Collectors.toList()));
     }
 
     /**
-     * Get the balance of user in blockchains
+     * Get the balance of user in blockchains in Ether unit
      * @param address
      * @return
      * @throws IOException
@@ -122,6 +139,7 @@ public class BankController {
     @GetMapping("/balance/{address}")
     public ApiResult<String> getBalance(@PathVariable String address) throws IOException {
         BigDecimal balance = assetService.getBalance(address);
+        // Convert balance to Ether unit
         return ApiResult.result(ApiCode.SUCCESS, Convert.fromWei(balance, Convert.Unit.ETHER).toString());
     }
 
@@ -133,43 +151,51 @@ public class BankController {
      */
     @GetMapping("/internal-balance")
     public ApiResult<String> getInternalBalance(HttpServletRequest request) throws IOException {
-        String accountToken = request.getHeader("Token");
-        AccountTokenEntity accountTokenEntity = loginService.isValid(accountToken);
-        if (accountTokenEntity == null) {
-            return ApiResult.result(ApiCode.INVALID_TOKEN, null);
-        }
+        try {
+            String accountToken = request.getHeader("Token");
+            AccountTokenEntity accountTokenEntity = loginService.isValid(accountToken);
+            if (accountTokenEntity == null) {
+                return ApiResult.result(ApiCode.INVALID_TOKEN, null);
+            }
+            AccountEntity accountEntity = accountService.findById(accountTokenEntity.getAccountId());
+            if (accountEntity == null) {
+                return ApiResult.result(ApiCode.NOT_FOUND_ACCOUNT, null);
+            }
 
-        AccountEntity accountEntity = accountService.findById(accountTokenEntity.getAccountId());
-        if (accountEntity == null) {
-            return ApiResult.result(ApiCode.NOT_FOUND_ACCOUNT, null);
+            // Convert balance to Ether unit
+            return ApiResult.result(ApiCode.SUCCESS, Convert.fromWei(accountEntity.getBalance(), Convert.Unit.ETHER).toString());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return ApiResult.internalError();
         }
-        return ApiResult.result(ApiCode.SUCCESS, Convert.fromWei(accountEntity.getBalance(), Convert.Unit.ETHER).toString());
     }
 
     /**
      * Transfer tokens in bank, should be logged in prior to call
      * @param to target wallet address which is already registered in bank
-     * @param amount transfer amount
+     * @param amount transfer amount in Ether unit
      * @param request
      * @return transaction hash
      */
     @GetMapping("/transfer")
     public ApiResult<TransactionDto> transfer(String to, BigDecimal amount, HttpServletRequest request) {
-        String accountToken = request.getHeader("Token");
-        AccountTokenEntity accountTokenEntity = loginService.isValid(accountToken);
-        if (accountTokenEntity == null) {
-            return ApiResult.result(ApiCode.INVALID_TOKEN, null);
-        }
-
-        AccountEntity fromAccount = accountService.findById(accountTokenEntity.getAccountId());
-        if (fromAccount == null) {
-            return ApiResult.result(ApiCode.NOT_FOUND_ACCOUNT, null);
-        }
         try {
+            String accountToken = request.getHeader("Token");
+            AccountTokenEntity accountTokenEntity = loginService.isValid(accountToken);
+            if (accountTokenEntity == null) {
+                return ApiResult.result(ApiCode.INVALID_TOKEN, null);
+            }
+            AccountEntity fromAccount = accountService.findById(accountTokenEntity.getAccountId());
+            if (fromAccount == null) {
+                return ApiResult.result(ApiCode.NOT_FOUND_ACCOUNT, null);
+            }
             AccountEntity toAccount = accountService.findByAddress(to);
             if (toAccount == null) {
                 return ApiResult.result(ApiCode.NOT_REGISTERED_ACCOUNT, null);
             }
+
+            // Convert amount parameter to Wei unit
+            amount = Convert.toWei(amount, Convert.Unit.ETHER);
 
             log.info("balance: {} > {}", fromAccount.getBalance().toString(), amount.toString());
             if (fromAccount.getBalance().compareTo(amount) < 0) {
@@ -192,24 +218,26 @@ public class BankController {
     /**
      * Deposit tokens, means transfer tokens from blockchain to bank, the balance of current account
      * will be increased after confirmation.
-     * @param amount token amount to deposit
+     * @param amount token amount to deposit in Ether unit
      * @param request
      * @return
      */
     @GetMapping("/deposit")
     public ApiResult<TransactionDto> deposit(BigDecimal amount, HttpServletRequest request) {
-        String accountToken = request.getHeader("Token");
-        AccountTokenEntity accountTokenEntity = loginService.isValid(accountToken);
-        if (accountTokenEntity == null) {
-            return ApiResult.result(ApiCode.INVALID_TOKEN, null);
-        }
-
-        AccountEntity accountEntity = accountService.findById(accountTokenEntity.getAccountId());
-        if (accountEntity == null) {
-            return ApiResult.result(ApiCode.NOT_FOUND_ACCOUNT, null);
-        }
-
         try {
+            String accountToken = request.getHeader("Token");
+            AccountTokenEntity accountTokenEntity = loginService.isValid(accountToken);
+            if (accountTokenEntity == null) {
+                return ApiResult.result(ApiCode.INVALID_TOKEN, null);
+            }
+            AccountEntity accountEntity = accountService.findById(accountTokenEntity.getAccountId());
+            if (accountEntity == null) {
+                return ApiResult.result(ApiCode.NOT_FOUND_ACCOUNT, null);
+            }
+
+            // Convert amount parameter to Wei unit
+            amount = Convert.toWei(amount, Convert.Unit.ETHER);
+
             if (assetService.getBalance(accountEntity.getAddress()).compareTo(amount) < 0) {
                 return ApiResult.result(ApiCode.NOT_ENOUGH_BALANCE, null);
             }
@@ -227,28 +255,29 @@ public class BankController {
     /**
      * Withdraw tokens, means transfer tokens from bank to blockchain, the balance of current account
      * will be decreased and transferred tokens.
-     * @param amount token amount to withdraw
+     * @param amount token amount to withdraw in Ether unit
      * @param request
      * @return
      */
     @GetMapping("/withdraw")
     public ApiResult<TransactionDto> withdraw(BigDecimal amount, HttpServletRequest request) {
-        String accountToken = request.getHeader("Token");
-        AccountTokenEntity accountTokenEntity = loginService.isValid(accountToken);
-        if (accountTokenEntity == null) {
-            return ApiResult.result(ApiCode.INVALID_TOKEN, null);
-        }
-
-        AccountEntity accountEntity = accountService.findById(accountTokenEntity.getAccountId());
-        if (accountEntity == null) {
-            return ApiResult.internalError();
-        }
-
-        if (accountEntity.getBalance().compareTo(amount) < 0) {
-            return ApiResult.result(ApiCode.NOT_ENOUGH_BALANCE, null);
-        }
-
         try {
+            String accountToken = request.getHeader("Token");
+            AccountTokenEntity accountTokenEntity = loginService.isValid(accountToken);
+            if (accountTokenEntity == null) {
+                return ApiResult.result(ApiCode.INVALID_TOKEN, null);
+            }
+            AccountEntity accountEntity = accountService.findById(accountTokenEntity.getAccountId());
+            if (accountEntity == null) {
+                return ApiResult.internalError();
+            }
+            if (accountEntity.getBalance().compareTo(amount) < 0) {
+                return ApiResult.result(ApiCode.NOT_ENOUGH_BALANCE, null);
+            }
+
+            // Convert amount parameter to Wei unit
+            amount = Convert.toWei(amount, Convert.Unit.ETHER);
+
             BigDecimal fee = amount.multiply(new BigDecimal(bankConfig.getFeeInPercent())).divide(BigDecimal.TEN.pow(4));
             amount = amount.subtract(fee);
             log.info("withdraw: to={}, amount={}, fee={}, request={}", accountEntity.getAddress(), amount.toString(), fee.toString());
