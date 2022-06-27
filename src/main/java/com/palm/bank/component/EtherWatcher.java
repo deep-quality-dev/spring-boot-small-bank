@@ -93,6 +93,12 @@ public class EtherWatcher implements Runnable {
         }
     }
 
+    /**
+     * Find all the deposit events within blocks
+     * @param startBlockNumber
+     * @param endBlockNumber
+     * @return
+     */
     private List<DepositEntity> replayBlock(long startBlockNumber, long endBlockNumber) {
         List<DepositEntity> deposits = new ArrayList<>();
         try {
@@ -102,7 +108,9 @@ public class EtherWatcher implements Runnable {
                 block.getBlock().getTransactions().stream().forEach(transactionResult -> {
                     EthBlock.TransactionObject transactionObject = (EthBlock.TransactionObject) transactionResult;
                     Transaction transaction = transactionObject.get();
+                    // Check if transaction is transferring tokens to withdraw wallet
                     if (transaction.getTo() != null && transaction.getTo().equalsIgnoreCase(withdrawWallet)) {
+                        // Add deposit events
                         DepositEntity depositEntity = DepositEntity.builder()
                                 .txHash(transaction.getHash())
                                 .blockNumber(transaction.getBlockNumber().longValue())

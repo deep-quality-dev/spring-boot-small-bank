@@ -19,14 +19,29 @@ public class BankConfig {
 
     private String keystorePath;
 
+    /**
+     * Fee in percent, 100% in 10000
+     */
     private Integer feeInPercent;
 
+    /**
+     * Increase gas fee per every transactions
+     */
     private Integer gasSpeedUp;
 
+    /**
+     * Gas limit
+     */
     private BigInteger gasLimit;
 
+    /**
+     * Keystore path to withdraw wallet
+     */
     private String withdrawWalletKeystore;
 
+    /**
+     * Password to keystore file of withdraw wallet
+     */
     private String withdrawWalletPassword;
 
     public Credentials getWithdrawWallet() throws IOException, CipherException {

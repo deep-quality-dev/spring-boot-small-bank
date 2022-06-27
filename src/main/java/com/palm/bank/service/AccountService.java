@@ -8,13 +8,37 @@ import java.util.List;
 @Service
 public interface AccountService {
 
+    /**
+     * Save and update account entity in `accounts` table
+     * @param accountEntity
+     * @return
+     */
     boolean save(AccountEntity accountEntity);
 
+    /**
+     * Find all the accounts in `accounts` table
+     * @return
+     */
     List<AccountEntity> findAll();
 
+    /**
+     * Find the account by `id` in `accounts` table
+     * @param accountId
+     * @return
+     */
     AccountEntity findById(Long accountId);
 
+    /**
+     * Find the account by `name` in `accounts` table
+     * @param name
+     * @return
+     */
     AccountEntity findByName(String name);
 
+    /**
+     * Find the account by `address` in `accounts` table
+     * @param address
+     * @return
+     */
     AccountEntity findByAddress(String address);
 }

@@ -7,5 +7,8 @@ import lombok.Getter;
 @Builder
 public class CreateAccountDto {
 
+    /**
+     * Wallet address on blockchain
+     */
     String address;
 }

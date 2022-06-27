@@ -48,11 +48,6 @@ public class AssetServiceImpl implements AssetService {
     }
 
     @Override
-    public List<String> getUnlockedAccounts() throws IOException {
-        return web3j.ethAccounts().send().getAccounts();
-    }
-
-    @Override
     public BigDecimal getBalance(String address) throws IOException {
         EthGetBalance balance = web3j.ethGetBalance(address, DefaultBlockParameterName.LATEST).send();
         return new BigDecimal(balance.getBalance().toString());

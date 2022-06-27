@@ -54,6 +54,18 @@ public class BankController {
         this.assetService = assetService;
     }
 
+    /**
+     * Create new account in the database with new wallet address.
+     * @param param CreateAcountParam structure
+     *              name: new user name
+     *              password: new user password
+     * @return
+     * @throws CipherException
+     * @throws InvalidAlgorithmParameterException
+     * @throws NoSuchAlgorithmException
+     * @throws NoSuchProviderException
+     * @throws IOException
+     */
     @PostMapping("/create-account")
     public ApiResult<CreateAccountDto> createAccount(@Validated @RequestBody CreateAccountParam param) throws CipherException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException, IOException {
         log.info("create account: name={}, password={}", param.getName(), param.getPassword());
@@ -71,6 +83,14 @@ public class BankController {
         }
     }
 
+    /**
+     * Login account with user name and password, and return auth token.
+     * If not exist user, return the code of NOT_FOUND_ACCOUNT.
+     * @param loginParam LoginParam structure
+     *                   name: user name to login
+     *                   password: user password to login
+     * @return new auth token
+     */
     @PostMapping("/login")
     public ApiResult<LoginDto> login(@Validated @RequestBody LoginParam loginParam) {
         log.info("login: name={}, password={}", loginParam.getName(), loginParam.getPassword());
@@ -82,6 +102,10 @@ public class BankController {
         return ApiResult.result(ApiCode.SUCCESS, LoginDto.builder().token(accountTokenEntity.getToken()).build());
     }
 
+    /**
+     * Get all the registered accounts with its wallet address and balance
+     * @return
+     */
     @GetMapping("/accounts")
     public ApiResult<List<AccountDto>> getAccounts() {
         log.info("accounts");
@@ -89,12 +113,24 @@ public class BankController {
         return ApiResult.result(ApiCode.SUCCESS, accountService.findAll().stream().map(accountEntity -> AccountDto.builder().name(accountEntity.getName()).address(accountEntity.getAddress()).balance(accountEntity.getBalance().toString()).build()).collect(Collectors.toList()));
     }
 
+    /**
+     * Get the balance of user in blockchains
+     * @param address
+     * @return
+     * @throws IOException
+     */
     @GetMapping("/balance/{address}")
     public ApiResult<String> getBalance(@PathVariable String address) throws IOException {
         BigDecimal balance = assetService.getBalance(address);
         return ApiResult.result(ApiCode.SUCCESS, Convert.fromWei(balance, Convert.Unit.ETHER).toString());
     }
 
+    /**
+     * Get the internal balance in bank, should be logged prior to call
+     * @param request
+     * @return
+     * @throws IOException
+     */
     @GetMapping("/internal-balance")
     public ApiResult<String> getInternalBalance(HttpServletRequest request) throws IOException {
         String accountToken = request.getHeader("Token");
@@ -110,6 +146,13 @@ public class BankController {
         return ApiResult.result(ApiCode.SUCCESS, Convert.fromWei(accountEntity.getBalance(), Convert.Unit.ETHER).toString());
     }
 
+    /**
+     * Transfer tokens in bank, should be logged in prior to call
+     * @param to target wallet address which is already registered in bank
+     * @param amount transfer amount
+     * @param request
+     * @return transaction hash
+     */
     @GetMapping("/transfer")
     public ApiResult<TransactionDto> transfer(String to, BigDecimal amount, HttpServletRequest request) {
         String accountToken = request.getHeader("Token");
@@ -146,6 +189,13 @@ public class BankController {
         }
     }
 
+    /**
+     * Deposit tokens, means transfer tokens from blockchain to bank, the balance of current account
+     * will be increased after confirmation.
+     * @param amount token amount to deposit
+     * @param request
+     * @return
+     */
     @GetMapping("/deposit")
     public ApiResult<TransactionDto> deposit(BigDecimal amount, HttpServletRequest request) {
         String accountToken = request.getHeader("Token");
@@ -174,6 +224,13 @@ public class BankController {
         }
     }
 
+    /**
+     * Withdraw tokens, means transfer tokens from bank to blockchain, the balance of current account
+     * will be decreased and transferred tokens.
+     * @param amount token amount to withdraw
+     * @param request
+     * @return
+     */
     @GetMapping("/withdraw")
     public ApiResult<TransactionDto> withdraw(BigDecimal amount, HttpServletRequest request) {
         String accountToken = request.getHeader("Token");

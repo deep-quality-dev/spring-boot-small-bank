@@ -6,7 +6,17 @@ import org.springframework.stereotype.Service;
 @Service
 public interface DepositService {
 
+    /**
+     * Check if deposit transaction was already registered in `deposits` table
+     * @param depositEntity
+     * @return
+     */
     boolean exists(DepositEntity depositEntity);
 
-    void save(DepositEntity depositEntity);
+    /**
+     * Save deposit transaction in `deposits` table
+     * @param depositEntity
+     * @return
+     */
+    boolean save(DepositEntity depositEntity);
 }

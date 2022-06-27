@@ -25,6 +25,10 @@ public class DepositEvent {
         this.accountService = accountService;
     }
 
+    /**
+     * Ether was already transferred to withdraw wallet, update the balance of same account
+     * @param depositEntity
+     */
     public synchronized void onConfirmed(DepositEntity depositEntity) {
         if (!depositService.exists(depositEntity)) {
             log.info("confirmed deposit: txHash={}, address={}, amount={}", depositEntity.getTxHash(), depositEntity.getAddress(), depositEntity.getAmount().toString());

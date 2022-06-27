@@ -23,7 +23,8 @@ public class DepositServiceImpl implements DepositService {
     }
 
     @Override
-    public void save(DepositEntity depositEntity) {
+    public boolean save(DepositEntity depositEntity) {
         depositRepository.save(depositEntity);
+        return true;
     }
 }

@@ -7,5 +7,8 @@ import lombok.Getter;
 @Builder
 public class TransactionDto {
 
+    /**
+     * Transaction hash on blockchain
+     */
     private String txHash;
 }

@@ -7,5 +7,8 @@ import lombok.Getter;
 @Builder
 public class LoginDto {
 
+    /**
+     * Auth token after login
+     */
     private String token;
 }
