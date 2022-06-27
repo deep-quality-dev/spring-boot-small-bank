@@ -19,7 +19,7 @@ public enum ApiCode {
 
     NOT_ENOUGH_BALANCE(104, "NOT ENOUGH BALANCE"),
 
-    FAILED_TX(105, "FAFILED IN TRANSACTION");
+    FAILED_TX(105, "FAILED IN TRANSACTION");
 
     private final int code;
     private final String message;

@@ -72,7 +72,15 @@ public class AssetServiceImpl implements AssetService {
             Credentials credentials = WalletUtils.loadCredentials(password, bankConfig.getKeystorePath() + "/" + filename);
             String address = credentials.getAddress();
 
-            AccountEntity accountEntity = AccountEntity.builder().name(name).password(password).filename(filename).address(address).balance(BigDecimal.ZERO.toString()).build();
+            AccountEntity accountEntity =
+                    AccountEntity.builder()
+                            .name(name)
+                            .password(password)
+                            .filename(filename)
+                            .address(address)
+                            .balance(BigDecimal.ZERO.toString())
+                            .build();
+            log.info("new account: name={}, filename={}, address={}", name, filename, address);
             if (accountService.save(accountEntity)) {
                 return accountEntity;
             }
@@ -84,9 +92,11 @@ public class AssetServiceImpl implements AssetService {
     }
 
     @Override
-    public String internalTransfer(AccountEntity from, String to, BigDecimal amount, BigDecimal fee) {
+    public String internalTransfer(AccountEntity from, AccountEntity to, BigDecimal amount, BigDecimal fee) {
         from.setBalance(from.getBalance().subtract(amount.add(fee)));
+        to.setBalance(to.getBalance().add(amount));
         accountService.save(from);
+        accountService.save(to);
         return TokenGenerator.generate(String.valueOf(new Date().getTime()));
     }
 
@@ -111,7 +121,7 @@ public class AssetServiceImpl implements AssetService {
             Credentials credentials = WalletUtils.loadCredentials(from.getPassword(), bankConfig.getKeystorePath() + "/" + from.getFilename());
 
             String transactionHash = transfer(credentials, bankConfig.getWithdrawWallet().getAddress(), amount);
-            log.info("deposit ether: txHash = {}", transactionHash);
+            log.info("deposit ether: from address={}, txHash = {}", credentials.getAddress(), transactionHash);
             return transactionHash;
         } catch (Exception ex) {
             ex.printStackTrace();

@@ -123,11 +123,12 @@ public class BankController {
             return ApiResult.result(ApiCode.NOT_FOUND_ACCOUNT, null);
         }
         try {
-            if (!to.equalsIgnoreCase(bankConfig.getWithdrawWallet().getAddress()) && accountService.findByAddress(to) == null) {
+            AccountEntity toAccount = accountService.findByAddress(to);
+            if (toAccount == null) {
                 return ApiResult.result(ApiCode.NOT_REGISTERED_ACCOUNT, null);
             }
 
-            log.info("Balance: {} > {}", fromAccount.getBalance().toString(), amount.toString());
+            log.info("balance: {} > {}", fromAccount.getBalance().toString(), amount.toString());
             if (fromAccount.getBalance().compareTo(amount) < 0) {
                 return ApiResult.result(ApiCode.NOT_ENOUGH_BALANCE, null);
             }
@@ -137,7 +138,7 @@ public class BankController {
             log.info("internal-transfer: to={}, amount={}, fee={}", to, amount.toString(), fee.toString());
 
             // Move balance within database
-            String txHash = assetService.internalTransfer(fromAccount, to, amount, fee);
+            String txHash = assetService.internalTransfer(fromAccount, toAccount, amount, fee);
             return ApiResult.result(ApiCode.SUCCESS, TransactionDto.builder().txHash(txHash).build());
         } catch (Exception ex) {
             ex.printStackTrace();

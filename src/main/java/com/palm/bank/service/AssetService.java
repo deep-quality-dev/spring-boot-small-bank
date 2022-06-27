@@ -20,7 +20,7 @@ public interface AssetService {
 
     AccountEntity createNewWallet(String name, String password) throws NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException, CipherException, IOException;
 
-    String internalTransfer(AccountEntity from, String to, BigDecimal amount, BigDecimal fee);
+    String internalTransfer(AccountEntity from, AccountEntity to, BigDecimal amount, BigDecimal fee);
 
     String deposit(AccountEntity from, BigDecimal amount);
 

@@ -4,6 +4,7 @@ import com.palm.bank.entity.AccountEntity;
 import com.palm.bank.entity.AccountTokenEntity;
 import com.palm.bank.repository.AccountRepository;
 import com.palm.bank.repository.AccountTokenRepository;
+import com.palm.bank.service.AccountService;
 import com.palm.bank.service.LoginService;
 import com.palm.bank.util.TokenGenerator;
 import lombok.extern.slf4j.Slf4j;
@@ -19,21 +20,21 @@ public class LoginServiceImpl implements LoginService {
     private final int EXPIRE_TIME = 1000 * 60 * 60 * 3; // 3 days
 
     @Autowired
-    private final AccountRepository accountRepository;
+    private final AccountService accountService;
 
     @Autowired
     private final AccountTokenRepository accountTokenRepository;
 
-    public LoginServiceImpl(AccountRepository accountRepository, AccountTokenRepository accountTokenRepository) {
-        this.accountRepository = accountRepository;
+    public LoginServiceImpl(AccountService accountService, AccountTokenRepository accountTokenRepository) {
+        this.accountService = accountService;
         this.accountTokenRepository = accountTokenRepository;
     }
 
     @Override
     public AccountTokenEntity login(String name, String password) {
-        AccountEntity accountEntity = accountRepository.findByName(name);
+        AccountEntity accountEntity = accountService.findByName(name);
         if (accountEntity == null) {
-            log.info("Not found account by name: {}", name);
+            log.error("not found account by name: {}", name);
             return null;
         }
 
@@ -44,7 +45,7 @@ public class LoginServiceImpl implements LoginService {
             accountTokenRepository.save(accountTokenEntity);
             return accountTokenEntity;
         }
-        log.info("Not match password for account: {}", name);
+        log.error("not match password for account: {}", name);
 
         return null;
     }
