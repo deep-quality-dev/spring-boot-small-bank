@@ -1,7 +1,7 @@
 package com.palm.bank.component;
 
 import com.palm.bank.config.BankConfig;
-import com.palm.bank.entity.DepositEntity;
+import com.palm.bank.entity.TransactionEntity;
 import com.palm.bank.event.DepositEvent;
 import com.palm.bank.service.AssetService;
 import lombok.extern.slf4j.Slf4j;
@@ -82,9 +82,9 @@ public class EtherWatcher implements Runnable {
             long startBlockNumber = currentBlockNumber + 1;
             currentBlockNumber = blockNumber - currentBlockNumber > step ? currentBlockNumber + step : blockNumber;
 
-            List<DepositEntity> deposits = replayBlock(startBlockNumber, currentBlockNumber);
+            List<TransactionEntity> deposits = replayBlock(startBlockNumber, currentBlockNumber);
             if (deposits != null) {
-                for (DepositEntity deposit : deposits) {
+                for (TransactionEntity deposit : deposits) {
                     depositEvent.onConfirmed(deposit);
                 }
             }
@@ -99,8 +99,8 @@ public class EtherWatcher implements Runnable {
      * @param endBlockNumber
      * @return
      */
-    private List<DepositEntity> replayBlock(long startBlockNumber, long endBlockNumber) {
-        List<DepositEntity> deposits = new ArrayList<>();
+    private List<TransactionEntity> replayBlock(long startBlockNumber, long endBlockNumber) {
+        List<TransactionEntity> deposits = new ArrayList<>();
         try {
             for (long blockNumber = startBlockNumber; blockNumber <= endBlockNumber; blockNumber++) {
                 EthBlock block = web3j.ethGetBlockByNumber(new DefaultBlockParameterNumber(blockNumber), true).send();
@@ -111,19 +111,21 @@ public class EtherWatcher implements Runnable {
                     // Check if transaction is transferring tokens to withdraw wallet
                     if (transaction.getTo() != null && transaction.getTo().equalsIgnoreCase(withdrawWallet)) {
                         // Add deposit events
-                        DepositEntity depositEntity = DepositEntity.builder()
+                        TransactionEntity transactionEntity = TransactionEntity.builder()
                                 .txHash(transaction.getHash())
                                 .blockNumber(transaction.getBlockNumber().longValue())
                                 .blockHash(transaction.getBlockHash())
                                 .amount(transaction.getValue().toString())
-                                .address(transaction.getFrom())
+                                .fromAddress(transaction.getFrom())
+                                .toAddress(withdrawWallet)
                                 .build();
-                        deposits.add(depositEntity);
-                        log.info("received deposit at block: txHash={}, from={}, amount={}, blockNumber={}",
-                                depositEntity.getTxHash(),
-                                depositEntity.getAddress(),
-                                depositEntity.getAmount(),
-                                depositEntity.getBlockNumber());
+                        deposits.add(transactionEntity);
+                        log.info("received deposit at block: txHash={}, from={}, to={}, amount={}, blockNumber={}",
+                                transactionEntity.getTxHash(),
+                                transactionEntity.getFromAddress(),
+                                transactionEntity.getToAddress(),
+                                transactionEntity.getAmount(),
+                                transactionEntity.getBlockNumber());
                     }
                 });
             }

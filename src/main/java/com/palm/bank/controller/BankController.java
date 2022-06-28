@@ -14,6 +14,7 @@ import com.palm.bank.param.LoginParam;
 import com.palm.bank.service.AccountService;
 import com.palm.bank.service.AssetService;
 import com.palm.bank.service.LoginService;
+import com.palm.bank.service.TransactionService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
@@ -47,15 +48,20 @@ public class BankController {
     @Autowired
     private final AssetService assetService;
 
-    public BankController(BankConfig bankConfig, LoginService loginService, AccountService accountService, AssetService assetService) {
+    @Autowired
+    private final TransactionService transactionService;
+
+    public BankController(BankConfig bankConfig, LoginService loginService, AccountService accountService, AssetService assetService, TransactionService transactionService) {
         this.bankConfig = bankConfig;
         this.loginService = loginService;
         this.accountService = accountService;
         this.assetService = assetService;
+        this.transactionService = transactionService;
     }
 
     /**
      * Create new account in the database with new wallet address.
+     *
      * @param param CreateAcountParam structure
      *              name: new user name
      *              password: new user password
@@ -87,6 +93,7 @@ public class BankController {
     /**
      * Login account with user name and password, and return auth token.
      * If not exist user, return the code of NOT_FOUND_ACCOUNT.
+     *
      * @param loginParam LoginParam structure
      *                   name: user name to login
      *                   password: user password to login
@@ -111,6 +118,7 @@ public class BankController {
 
     /**
      * Get all the registered accounts with its wallet address and balance
+     *
      * @return
      */
     @GetMapping("/accounts")
@@ -121,17 +129,18 @@ public class BankController {
                 ApiCode.SUCCESS,
                 accountService.findAll()
                         .stream().map(
-                                accountEntity ->
-                                        AccountDto.builder()
-                                                .name(accountEntity.getName())
-                                                .address(accountEntity.getAddress())
-                                                .balance(Convert.fromWei(accountEntity.getBalance(), Convert.Unit.ETHER).toString())
-                                                .build()
-                        ).collect(Collectors.toList()));
+                        accountEntity ->
+                                AccountDto.builder()
+                                        .name(accountEntity.getName())
+                                        .address(accountEntity.getAddress())
+                                        .balance(Convert.fromWei(accountEntity.getBalance(), Convert.Unit.ETHER).toString())
+                                        .build()
+                ).collect(Collectors.toList()));
     }
 
     /**
      * Get the balance of user in blockchains in Ether unit
+     *
      * @param address
      * @return
      * @throws IOException
@@ -145,6 +154,7 @@ public class BankController {
 
     /**
      * Get the internal balance in bank, should be logged prior to call
+     *
      * @param request
      * @return
      * @throws IOException
@@ -170,10 +180,39 @@ public class BankController {
         }
     }
 
+    @GetMapping("/transactions")
+    public ApiResult<List<TransactionDto>> getTransactions(HttpServletRequest request) throws IOException {
+        try {
+            String accountToken = request.getHeader("Token");
+            AccountTokenEntity accountTokenEntity = loginService.isValid(accountToken);
+            if (accountTokenEntity == null) {
+                return ApiResult.result(ApiCode.INVALID_TOKEN, null);
+            }
+            AccountEntity accountEntity = accountService.findById(accountTokenEntity.getAccountId());
+            if (accountEntity == null) {
+                return ApiResult.result(ApiCode.NOT_FOUND_ACCOUNT, null);
+            }
+
+            return ApiResult.result(ApiCode.SUCCESS, transactionService.findAll().stream().map(transactionEntity ->
+                    TransactionDto.builder()
+                            .txHash(transactionEntity.getTxHash())
+                            .from(transactionEntity.getFromAddress())
+                            .to(transactionEntity.getToAddress())
+                            .amount(transactionEntity.getAmount())
+                            .build()
+            ).collect(Collectors.toList()));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return ApiResult.internalError();
+        }
+
+    }
+
     /**
      * Transfer tokens in bank, should be logged in prior to call
-     * @param to target wallet address which is already registered in bank
-     * @param amount transfer amount in Ether unit
+     *
+     * @param to      target wallet address which is already registered in bank
+     * @param amount  transfer amount in Ether unit
      * @param request
      * @return transaction hash
      */
@@ -218,7 +257,8 @@ public class BankController {
     /**
      * Deposit tokens, means transfer tokens from blockchain to bank, the balance of current account
      * will be increased after confirmation.
-     * @param amount token amount to deposit in Ether unit
+     *
+     * @param amount  token amount to deposit in Ether unit
      * @param request
      * @return
      */
@@ -255,7 +295,8 @@ public class BankController {
     /**
      * Withdraw tokens, means transfer tokens from bank to blockchain, the balance of current account
      * will be decreased and transferred tokens.
-     * @param amount token amount to withdraw in Ether unit
+     *
+     * @param amount  token amount to withdraw in Ether unit
      * @param request
      * @return
      */

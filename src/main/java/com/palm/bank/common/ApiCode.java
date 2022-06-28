@@ -29,7 +29,7 @@ public enum ApiCode {
         this.message = message;
     }
 
-    public static ApiCode getApiCode(int code) {
+    public static ApiCode valueOf(int code) {
         ApiCode[] codes = ApiCode.values();
 
         for (ApiCode ec : codes) {

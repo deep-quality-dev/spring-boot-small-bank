@@ -15,22 +15,25 @@ import javax.persistence.Table;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "deposits")
-public class DepositEntity {
+@Table(name = "transactions")
+public class TransactionEntity {
 
     @Id
     @Column(nullable = false, length = 128)
     private String txHash;
 
-    @Column(nullable = false, length = 128)
+    @Column(nullable = true, length = 128)
     private String blockHash;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private Long blockNumber;
 
     @Column(nullable = false, length = 64)
     private String amount;
 
     @Column(nullable = false, length = 64)
-    private String address;
+    private String fromAddress;
+
+    @Column(nullable = false, length = 64)
+    private String toAddress;
 }

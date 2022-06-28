@@ -2,8 +2,10 @@ package com.palm.bank.service.impl;
 
 import com.palm.bank.config.BankConfig;
 import com.palm.bank.entity.AccountEntity;
+import com.palm.bank.entity.TransactionEntity;
 import com.palm.bank.service.AccountService;
 import com.palm.bank.service.AssetService;
+import com.palm.bank.service.TransactionService;
 import com.palm.bank.util.TokenGenerator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +27,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Date;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 @Slf4j
@@ -41,10 +42,14 @@ public class AssetServiceImpl implements AssetService {
     @Autowired
     private final AccountService accountService;
 
-    public AssetServiceImpl(BankConfig bankConfig, Web3j web3j, AccountService accountService) {
+    @Autowired
+    private final TransactionService transactionService;
+
+    public AssetServiceImpl(BankConfig bankConfig, Web3j web3j, AccountService accountService, TransactionService transactionService) {
         this.bankConfig = bankConfig;
         this.web3j = web3j;
         this.accountService = accountService;
+        this.transactionService = transactionService;
     }
 
     @Override
@@ -92,7 +97,15 @@ public class AssetServiceImpl implements AssetService {
         to.setBalance(to.getBalance().add(amount));
         accountService.save(from);
         accountService.save(to);
-        return TokenGenerator.generate(String.valueOf(new Date().getTime()));
+
+        String txHash = TokenGenerator.generate(String.valueOf(new Date().getTime()));
+        transactionService.save(TransactionEntity.builder()
+                .txHash(txHash)
+                .amount(amount.toString())
+                .fromAddress(from.getAddress())
+                .toAddress(to.getAddress())
+                .build());
+        return txHash;
     }
 
     private String transfer(Credentials credentials, String to, BigDecimal amount) throws IOException, ExecutionException, InterruptedException {
@@ -136,6 +149,14 @@ public class AssetServiceImpl implements AssetService {
 
             String transactionHash = transfer(credentials, to.getAddress(), amount);
             log.info("withdraw ether: txHash = {}", transactionHash);
+
+            transactionService.save(TransactionEntity.builder()
+                    .txHash(transactionHash)
+                    .amount(amount.toString())
+                    .fromAddress(credentials.getAddress())
+                    .toAddress(to.getAddress())
+                    .build());
+
             return transactionHash;
         } catch (Exception ex) {
             ex.printStackTrace();
