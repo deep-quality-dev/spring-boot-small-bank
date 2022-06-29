@@ -9,8 +9,10 @@ This repository demonstrates the small bank interacting with H2 database and Gan
 - [x] Login
 - [x] Realization of money deposit
 - [x] List of accounts with a balance
+- [x] List of transactions
 - [x] Transfer ether from account A to account B
 - [x] Deposit/Withdraw ether from/to blockchain
+- [x] JWT authentication
 
 ## Pre-requirements
 
@@ -56,7 +58,7 @@ Body:
 
 Method: `POST`
 
-URL: `/v1/bank/login`
+URL: `/users/login`
 
 Content-Type: `application/json`
 
@@ -71,15 +73,11 @@ Body:
 
 #### Response
 
-```json
-{
-  "code": "SUCCESS",
-  "data": {
-    "token": "13792241551fe59e93e8d27f35962ff6"
-  },
-  "time": "2022-06-27 10:06:51.004"
-}
+Response Header
 ```
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJuYW1lIiwiZXhwIjoxNjU3Mzc0MDE5fQ.3Y06--LYsRxys6p9X8a1y8ao1nxkdeHLHagB-8sYm6-T5N2Z6NO9hkj6QFPTv8V4c-akJ28PnFCe7ydMD_4Jug
+```
+
 
 ### Get balance of account
 
@@ -93,7 +91,7 @@ URL: `/v1/bank/{address}`
 
 Content-Type: `application/json`
 
-Token: `auth-token`
+Authorization: `Bearer ****`
 
 Body:
 
@@ -126,7 +124,7 @@ URL: `/v1/bank/transfer?to={to address}&amount={amount}`
 
 Content-Type: `application/json`
 
-Token: `auth-token`
+Authorization: `Bearer ****`
 
 Body:
 
@@ -169,7 +167,7 @@ URL: `/v1/bank/deposit?amount={amount}`
 
 Content-Type: `application/json`
 
-Token: `auth-token`
+Authorization: `Bearer ****`
 
 #### Response
 
@@ -195,7 +193,7 @@ URL: `/v1/bank/withdraw?amount={amount}`
 
 Content-Type: `application/json`
 
-Token: `auth-token`
+Authorization: `Bearer ****`
 
 #### Response
 
