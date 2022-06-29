@@ -15,6 +15,11 @@ import java.math.BigInteger;
 @ConfigurationProperties(prefix = "bank")
 public class BankConfig {
 
+    /**
+     * Signing key for jwt token
+     */
+    private String tokenSecret;
+
     private String rpc;
 
     private String keystorePath;

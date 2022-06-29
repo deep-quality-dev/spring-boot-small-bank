@@ -95,6 +95,7 @@ public class EtherWatcher implements Runnable {
 
     /**
      * Find all the deposit events within blocks
+     *
      * @param startBlockNumber
      * @param endBlockNumber
      * @return

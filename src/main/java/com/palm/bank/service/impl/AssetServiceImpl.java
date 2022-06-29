@@ -9,6 +9,7 @@ import com.palm.bank.service.TransactionService;
 import com.palm.bank.util.TokenGenerator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.RawTransaction;
@@ -45,11 +46,15 @@ public class AssetServiceImpl implements AssetService {
     @Autowired
     private final TransactionService transactionService;
 
-    public AssetServiceImpl(BankConfig bankConfig, Web3j web3j, AccountService accountService, TransactionService transactionService) {
+    @Autowired
+    private final BCryptPasswordEncoder bCryptPasswordEncoder;
+
+    public AssetServiceImpl(BankConfig bankConfig, Web3j web3j, AccountService accountService, TransactionService transactionService, BCryptPasswordEncoder bCryptPasswordEncoder) {
         this.bankConfig = bankConfig;
         this.web3j = web3j;
         this.accountService = accountService;
         this.transactionService = transactionService;
+        this.bCryptPasswordEncoder = bCryptPasswordEncoder;
     }
 
     @Override
@@ -68,19 +73,22 @@ public class AssetServiceImpl implements AssetService {
     @Override
     public AccountEntity createNewWallet(String name, String password) {
         try {
-            String filename = WalletUtils.generateNewWalletFile(password, new File(bankConfig.getKeystorePath()), true);
-            Credentials credentials = WalletUtils.loadCredentials(password, bankConfig.getKeystorePath() + "/" + filename);
+            String encoded = bCryptPasswordEncoder.encode(password);
+
+            String filename = WalletUtils.generateNewWalletFile(encoded, new File(bankConfig.getKeystorePath()), true);
+            Credentials credentials = WalletUtils.loadCredentials(encoded, bankConfig.getKeystorePath() + "/" + filename);
             String address = credentials.getAddress();
 
             AccountEntity accountEntity =
                     AccountEntity.builder()
                             .name(name)
-                            .password(password)
+                            .encodedPassword(encoded) // Password should be stored as encrypted
                             .filename(filename)
                             .address(address)
                             .balance(BigDecimal.ZERO.toString())
                             .build();
-            log.info("new account: name={}, filename={}, address={}", name, filename, address);
+
+            log.info("new account: name={}, filename={}, address={}, password={}, encoded={}", name, filename, address, password, encoded);
             if (accountService.save(accountEntity)) {
                 return accountEntity;
             }
@@ -126,7 +134,7 @@ public class AssetServiceImpl implements AssetService {
     @Override
     public String deposit(AccountEntity from, BigDecimal amount) {
         try {
-            Credentials credentials = WalletUtils.loadCredentials(from.getPassword(), bankConfig.getKeystorePath() + "/" + from.getFilename());
+            Credentials credentials = WalletUtils.loadCredentials(from.getEncodedPassword(), bankConfig.getKeystorePath() + "/" + from.getFilename());
 
             String transactionHash = transfer(credentials, bankConfig.getWithdrawWallet().getAddress(), amount);
             log.info("deposit ether: from address={}, txHash = {}", credentials.getAddress(), transactionHash);

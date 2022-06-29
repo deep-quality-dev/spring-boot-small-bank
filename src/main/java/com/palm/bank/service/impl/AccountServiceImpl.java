@@ -5,8 +5,12 @@ import com.palm.bank.entity.AccountEntity;
 import com.palm.bank.repository.AccountRepository;
 import com.palm.bank.service.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service("accountService")
@@ -47,5 +51,17 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public AccountEntity findByAddress(String address) {
         return accountRepository.findByAddress(address);
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        // This function is overrided from `UserDetailsService` interface, will be called when authorizing
+        AccountEntity accountEntity = this.findByName(username);
+        if (accountEntity == null) {
+            throw new UsernameNotFoundException(username);
+        }
+
+        return new User(accountEntity.getName(), accountEntity.getEncodedPassword(),
+                true, true, true, true, new ArrayList<>());
     }
 }

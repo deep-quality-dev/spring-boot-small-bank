@@ -17,6 +17,7 @@ spring:
     spring.jpa.database-platform: org.hibernate.dialect.H2Dialect
 
 bank:
+  token-secret: jf9i4jgu83nfl0jfu57ejf7
   rpc: http://localhost:8545
   keystore-path: ./keystore
   fee-in-percent: 3 # 0.03%

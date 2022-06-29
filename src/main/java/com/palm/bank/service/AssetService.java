@@ -9,13 +9,13 @@ import java.math.BigDecimal;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.util.List;
 
 @Service
 public interface AssetService {
 
     /**
      * Get the balance by address in bank, in Wei unit
+     *
      * @param address
      * @return account balance
      * @throws IOException
@@ -24,7 +24,8 @@ public interface AssetService {
 
     /**
      * Create new wallet address and add it in bank
-     * @param name new user name
+     *
+     * @param name     new user name
      * @param password new user password
      * @return account entity with new wallet address
      * @throws NoSuchAlgorithmException
@@ -37,16 +38,18 @@ public interface AssetService {
 
     /**
      * Move balance in bank, cutting off the fee
+     *
      * @param from
      * @param to
      * @param amount in wei unit
-     * @param fee in wei unit
+     * @param fee    in wei unit
      * @return
      */
     String internalTransfer(AccountEntity from, AccountEntity to, BigDecimal amount, BigDecimal fee);
 
     /**
      * Deposit tokens, refer: BankController.deposit
+     *
      * @param from
      * @param amount in wei unit
      * @return
@@ -55,9 +58,10 @@ public interface AssetService {
 
     /**
      * Withdraw tokens, refer: BankController.withdraw
+     *
      * @param to
      * @param amount in wei unit
-     * @param fee in wei unit
+     * @param fee    in wei unit
      * @return
      */
     String withdraw(AccountEntity to, BigDecimal amount, BigDecimal fee);

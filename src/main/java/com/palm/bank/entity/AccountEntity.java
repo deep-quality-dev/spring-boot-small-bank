@@ -23,9 +23,9 @@ public class AccountEntity {
     @Column(nullable = false, length = 32)
     private String name;
 
-    @Column(nullable = true, length = 32)
-    private String password;
-    
+    @Column(nullable = true, length = 128)
+    private String encodedPassword;
+
     @Column(nullable = false, length = 256)
     private String filename;
 

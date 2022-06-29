@@ -69,7 +69,7 @@ public class AssetServiceTests {
 
         AccountEntity from = AccountEntity.builder()
                 .name("name")
-                .password("password")
+                .encodedPassword("password")
                 .address("address")
                 .filename("filename")
                 .balance(BigDecimal.TEN.pow(18).toString())
@@ -77,7 +77,7 @@ public class AssetServiceTests {
 
         AccountEntity to = AccountEntity.builder()
                 .name("name1")
-                .password("password1")
+                .encodedPassword("password1")
                 .address("address1")
                 .filename("filename1")
                 .balance(BigDecimal.TEN.pow(18).multiply(new BigDecimal(2)).toString())

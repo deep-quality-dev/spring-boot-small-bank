@@ -1,15 +1,17 @@
 package com.palm.bank.service;
 
 import com.palm.bank.entity.AccountEntity;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
-public interface AccountService {
+public interface AccountService extends UserDetailsService {
 
     /**
      * Save and update account entity in `accounts` table
+     *
      * @param accountEntity
      * @return
      */
@@ -17,12 +19,14 @@ public interface AccountService {
 
     /**
      * Find all the accounts in `accounts` table
+     *
      * @return
      */
     List<AccountEntity> findAll();
 
     /**
      * Find the account by `id` in `accounts` table
+     *
      * @param accountId
      * @return
      */
@@ -30,6 +34,7 @@ public interface AccountService {
 
     /**
      * Find the account by `name` in `accounts` table
+     *
      * @param name
      * @return
      */
@@ -37,6 +42,7 @@ public interface AccountService {
 
     /**
      * Find the account by `address` in `accounts` table
+     *
      * @param address
      * @return
      */

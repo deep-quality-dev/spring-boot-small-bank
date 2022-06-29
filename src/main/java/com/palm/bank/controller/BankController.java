@@ -5,16 +5,13 @@ import com.palm.bank.common.ApiResult;
 import com.palm.bank.config.BankConfig;
 import com.palm.bank.dto.AccountDto;
 import com.palm.bank.dto.CreateAccountDto;
-import com.palm.bank.dto.LoginDto;
 import com.palm.bank.dto.TransactionDto;
 import com.palm.bank.entity.AccountEntity;
-import com.palm.bank.entity.AccountTokenEntity;
 import com.palm.bank.param.CreateAccountParam;
-import com.palm.bank.param.LoginParam;
 import com.palm.bank.service.AccountService;
 import com.palm.bank.service.AssetService;
-import com.palm.bank.service.LoginService;
 import com.palm.bank.service.TransactionService;
+import com.palm.bank.util.JwtTokenUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
@@ -40,9 +37,6 @@ public class BankController {
     private final BankConfig bankConfig;
 
     @Autowired
-    private final LoginService loginService;
-
-    @Autowired
     private final AccountService accountService;
 
     @Autowired
@@ -51,9 +45,8 @@ public class BankController {
     @Autowired
     private final TransactionService transactionService;
 
-    public BankController(BankConfig bankConfig, LoginService loginService, AccountService accountService, AssetService assetService, TransactionService transactionService) {
+    public BankController(BankConfig bankConfig, AccountService accountService, AssetService assetService, TransactionService transactionService) {
         this.bankConfig = bankConfig;
-        this.loginService = loginService;
         this.accountService = accountService;
         this.assetService = assetService;
         this.transactionService = transactionService;
@@ -73,7 +66,8 @@ public class BankController {
      * @throws IOException
      */
     @PostMapping("/create-account")
-    public ApiResult<CreateAccountDto> createAccount(@Validated @RequestBody CreateAccountParam param) throws CipherException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException, IOException {
+    public ApiResult<CreateAccountDto> createAccount(@Validated @RequestBody CreateAccountParam param)
+            throws CipherException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException, IOException {
         log.info("create account: name={}, password={}", param.getName(), param.getPassword());
 
         try {
@@ -84,32 +78,6 @@ public class BankController {
 
             accountEntity = assetService.createNewWallet(param.getName(), param.getPassword());
             return ApiResult.result(ApiCode.SUCCESS, CreateAccountDto.builder().address(accountEntity.getAddress()).build());
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            return ApiResult.internalError();
-        }
-    }
-
-    /**
-     * Login account with user name and password, and return auth token.
-     * If not exist user, return the code of NOT_FOUND_ACCOUNT.
-     *
-     * @param loginParam LoginParam structure
-     *                   name: user name to login
-     *                   password: user password to login
-     * @return new auth token
-     */
-    @PostMapping("/login")
-    public ApiResult<LoginDto> login(@Validated @RequestBody LoginParam loginParam) {
-        log.info("login: name={}, password={}", loginParam.getName(), loginParam.getPassword());
-
-        try {
-            AccountTokenEntity accountTokenEntity = loginService.login(loginParam.getName(), loginParam.getPassword());
-            if (accountTokenEntity == null) {
-                return ApiResult.result(ApiCode.NOT_FOUND_ACCOUNT, null);
-            }
-
-            return ApiResult.result(ApiCode.SUCCESS, LoginDto.builder().token(accountTokenEntity.getToken()).build());
         } catch (Exception ex) {
             ex.printStackTrace();
             return ApiResult.internalError();
@@ -162,12 +130,8 @@ public class BankController {
     @GetMapping("/internal-balance")
     public ApiResult<String> getInternalBalance(HttpServletRequest request) throws IOException {
         try {
-            String accountToken = request.getHeader("Token");
-            AccountTokenEntity accountTokenEntity = loginService.isValid(accountToken);
-            if (accountTokenEntity == null) {
-                return ApiResult.result(ApiCode.INVALID_TOKEN, null);
-            }
-            AccountEntity accountEntity = accountService.findById(accountTokenEntity.getAccountId());
+            String username = JwtTokenUtil.getUsername(request);
+            AccountEntity accountEntity = accountService.findByName(username);
             if (accountEntity == null) {
                 return ApiResult.result(ApiCode.NOT_FOUND_ACCOUNT, null);
             }
@@ -183,12 +147,8 @@ public class BankController {
     @GetMapping("/transactions")
     public ApiResult<List<TransactionDto>> getTransactions(HttpServletRequest request) throws IOException {
         try {
-            String accountToken = request.getHeader("Token");
-            AccountTokenEntity accountTokenEntity = loginService.isValid(accountToken);
-            if (accountTokenEntity == null) {
-                return ApiResult.result(ApiCode.INVALID_TOKEN, null);
-            }
-            AccountEntity accountEntity = accountService.findById(accountTokenEntity.getAccountId());
+            String username = JwtTokenUtil.getUsername(request);
+            AccountEntity accountEntity = accountService.findByName(username);
             if (accountEntity == null) {
                 return ApiResult.result(ApiCode.NOT_FOUND_ACCOUNT, null);
             }
@@ -219,12 +179,8 @@ public class BankController {
     @GetMapping("/transfer")
     public ApiResult<TransactionDto> transfer(String to, BigDecimal amount, HttpServletRequest request) {
         try {
-            String accountToken = request.getHeader("Token");
-            AccountTokenEntity accountTokenEntity = loginService.isValid(accountToken);
-            if (accountTokenEntity == null) {
-                return ApiResult.result(ApiCode.INVALID_TOKEN, null);
-            }
-            AccountEntity fromAccount = accountService.findById(accountTokenEntity.getAccountId());
+            String username = JwtTokenUtil.getUsername(request);
+            AccountEntity fromAccount = accountService.findByName(username);
             if (fromAccount == null) {
                 return ApiResult.result(ApiCode.NOT_FOUND_ACCOUNT, null);
             }
@@ -265,12 +221,8 @@ public class BankController {
     @GetMapping("/deposit")
     public ApiResult<TransactionDto> deposit(BigDecimal amount, HttpServletRequest request) {
         try {
-            String accountToken = request.getHeader("Token");
-            AccountTokenEntity accountTokenEntity = loginService.isValid(accountToken);
-            if (accountTokenEntity == null) {
-                return ApiResult.result(ApiCode.INVALID_TOKEN, null);
-            }
-            AccountEntity accountEntity = accountService.findById(accountTokenEntity.getAccountId());
+            String username = JwtTokenUtil.getUsername(request);
+            AccountEntity accountEntity = accountService.findByName(username);
             if (accountEntity == null) {
                 return ApiResult.result(ApiCode.NOT_FOUND_ACCOUNT, null);
             }
@@ -303,12 +255,8 @@ public class BankController {
     @GetMapping("/withdraw")
     public ApiResult<TransactionDto> withdraw(BigDecimal amount, HttpServletRequest request) {
         try {
-            String accountToken = request.getHeader("Token");
-            AccountTokenEntity accountTokenEntity = loginService.isValid(accountToken);
-            if (accountTokenEntity == null) {
-                return ApiResult.result(ApiCode.INVALID_TOKEN, null);
-            }
-            AccountEntity accountEntity = accountService.findById(accountTokenEntity.getAccountId());
+            String username = JwtTokenUtil.getUsername(request);
+            AccountEntity accountEntity = accountService.findByName(username);
             if (accountEntity == null) {
                 return ApiResult.internalError();
             }

@@ -10,6 +10,7 @@ public interface TransactionService {
 
     /**
      * Check if deposit transaction was already registered in `deposits` table
+     *
      * @param transactionEntity
      * @return
      */
@@ -17,6 +18,7 @@ public interface TransactionService {
 
     /**
      * Save deposit transaction in `deposits` table
+     *
      * @param transactionEntity
      * @return
      */

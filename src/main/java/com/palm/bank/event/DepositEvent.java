@@ -27,6 +27,7 @@ public class DepositEvent {
 
     /**
      * Ether was already transferred to withdraw wallet, update the balance of same account
+     *
      * @param transactionEntity
      */
     public synchronized void onConfirmed(TransactionEntity transactionEntity) {
