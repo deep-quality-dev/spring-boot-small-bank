@@ -34,19 +34,14 @@ import java.util.concurrent.ExecutionException;
 @Service("assetService")
 public class AssetServiceImpl implements AssetService {
 
-    @Autowired
     private final BankConfig bankConfig;
 
-    @Autowired
     private final Web3j web3j;
 
-    @Autowired
     private final AccountService accountService;
 
-    @Autowired
     private final TransactionService transactionService;
 
-    @Autowired
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
     public AssetServiceImpl(BankConfig bankConfig, Web3j web3j, AccountService accountService, TransactionService transactionService, BCryptPasswordEncoder bCryptPasswordEncoder) {

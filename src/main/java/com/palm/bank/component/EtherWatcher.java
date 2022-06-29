@@ -20,16 +20,12 @@ import java.util.List;
 @Component
 public class EtherWatcher implements Runnable {
 
-    @Autowired
     private final BankConfig bankConfig;
 
-    @Autowired
     private final Web3j web3j;
 
-    @Autowired
     private final AssetService assetService;
 
-    @Autowired
     private final DepositEvent depositEvent;
 
     private final int CHECK_INTERVAL = 2000;

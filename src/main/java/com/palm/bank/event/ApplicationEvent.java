@@ -11,8 +11,11 @@ import org.springframework.stereotype.Service;
 @Service
 public class ApplicationEvent implements ApplicationListener<ContextRefreshedEvent> {
 
-    @Autowired
-    private EtherWatcher etherWatcher;
+    private final EtherWatcher etherWatcher;
+
+    public ApplicationEvent(EtherWatcher etherWatcher) {
+        this.etherWatcher = etherWatcher;
+    }
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {

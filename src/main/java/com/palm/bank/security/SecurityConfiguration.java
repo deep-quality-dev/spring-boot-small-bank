@@ -16,13 +16,10 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 public class SecurityConfiguration {
 
-    @Autowired
     private final BankConfig bankConfig;
 
-    @Autowired
     private final AccountService userDetailsService;
 
-    @Autowired
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
     public SecurityConfiguration(BankConfig bankConfig, AccountService userDetailsService, BCryptPasswordEncoder bCryptPasswordEncoder) {

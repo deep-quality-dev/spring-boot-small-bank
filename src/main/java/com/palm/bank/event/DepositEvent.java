@@ -14,10 +14,8 @@ import java.math.BigDecimal;
 @Component
 public class DepositEvent {
 
-    @Autowired
     private final TransactionService transactionService;
 
-    @Autowired
     private final AccountService accountService;
 
     public DepositEvent(TransactionService transactionService, AccountService accountService) {

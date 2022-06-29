@@ -33,16 +33,12 @@ import java.util.stream.Collectors;
 @RequestMapping("/v1/bank")
 public class BankController {
 
-    @Autowired
     private final BankConfig bankConfig;
 
-    @Autowired
     private final AccountService accountService;
 
-    @Autowired
     private final AssetService assetService;
 
-    @Autowired
     private final TransactionService transactionService;
 
     public BankController(BankConfig bankConfig, AccountService accountService, AssetService assetService, TransactionService transactionService) {
