@@ -38,6 +38,9 @@ public class AssetServiceTests {
     @Autowired
     private BankConfig bankConfig;
 
+    @Autowired
+    private Credentials withdrawWallet;
+
     @MockBean
     private AccountService accountService;
 
@@ -58,7 +61,7 @@ public class AssetServiceTests {
         Assert.assertEquals(accountEntity.getName(), "name");
         Assert.assertNotNull(accountEntity.getFilename());
         Assert.assertNotNull(accountEntity.getAddress());
-        Files.deleteIfExists(Paths.get(bankConfig.getKeystorePath() + "/" + accountEntity.getFilename()));
+        Files.deleteIfExists(Paths.get(bankConfig.getWallet().getKeystorePath() + "/" + accountEntity.getFilename()));
     }
 
     @Test
@@ -140,7 +143,7 @@ public class AssetServiceTests {
         } catch (Exception ex) {
             ex.printStackTrace();
         } finally {
-            Files.deleteIfExists(Paths.get(bankConfig.getKeystorePath() + "/" + fromAccount.getFilename()));
+            Files.deleteIfExists(Paths.get(bankConfig.getWallet().getKeystorePath() + "/" + fromAccount.getFilename()));
         }
     }
 
@@ -154,9 +157,7 @@ public class AssetServiceTests {
         try {
             fromAccount.setBalance(BigDecimal.TEN.add(BigDecimal.ONE));
 
-            Credentials credentials = bankConfig.getWithdrawWallet();
-
-            mockTransfer(credentials.getAddress(), "txHash", (mockTxHash) -> {
+            mockTransfer(withdrawWallet.getAddress(), "txHash", (mockTxHash) -> {
                 String txHash = assetService.withdraw(fromAccount, BigDecimal.TEN, BigDecimal.ONE);
                 Assert.assertEquals(txHash, mockTxHash);
 
@@ -166,7 +167,7 @@ public class AssetServiceTests {
         } catch (Exception ex) {
             ex.printStackTrace();
         } finally {
-            Files.deleteIfExists(Paths.get(bankConfig.getKeystorePath() + "/" + fromAccount.getFilename()));
+            Files.deleteIfExists(Paths.get(bankConfig.getWallet().getKeystorePath() + "/" + fromAccount.getFilename()));
         }
     }
 }

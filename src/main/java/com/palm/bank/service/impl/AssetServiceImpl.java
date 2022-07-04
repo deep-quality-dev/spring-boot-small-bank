@@ -35,6 +35,8 @@ public class AssetServiceImpl implements AssetService {
 
     private final BankConfig bankConfig;
 
+    private final Credentials withdrawWallet;
+
     private final Web3j web3j;
 
     private final AccountService accountService;
@@ -43,8 +45,9 @@ public class AssetServiceImpl implements AssetService {
 
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
-    public AssetServiceImpl(BankConfig bankConfig, Web3j web3j, AccountService accountService, TransactionService transactionService, BCryptPasswordEncoder bCryptPasswordEncoder) {
+    public AssetServiceImpl(BankConfig bankConfig, Credentials withdrawWallet, Web3j web3j, AccountService accountService, TransactionService transactionService, BCryptPasswordEncoder bCryptPasswordEncoder) {
         this.bankConfig = bankConfig;
+        this.withdrawWallet = withdrawWallet;
         this.web3j = web3j;
         this.accountService = accountService;
         this.transactionService = transactionService;
@@ -61,7 +64,7 @@ public class AssetServiceImpl implements AssetService {
         EthGasPrice gasPrice = web3j.ethGasPrice().send();
         BigInteger baseGasPrice = gasPrice.getGasPrice();
         BigInteger pow4 = BigInteger.TEN.pow(4);
-        return baseGasPrice.multiply(new BigInteger(bankConfig.getGasSpeedUp().toString()).add(pow4)).divide(pow4);
+        return baseGasPrice.multiply(new BigInteger(bankConfig.getGas().getSpeedUp().toString()).add(pow4)).divide(pow4);
     }
 
     @Override
@@ -69,8 +72,8 @@ public class AssetServiceImpl implements AssetService {
         try {
             String encoded = bCryptPasswordEncoder.encode(password);
 
-            String filename = WalletUtils.generateNewWalletFile(encoded, new File(bankConfig.getKeystorePath()), true);
-            Credentials credentials = WalletUtils.loadCredentials(encoded, bankConfig.getKeystorePath() + "/" + filename);
+            String filename = WalletUtils.generateNewWalletFile(encoded, new File(bankConfig.getWallet().getKeystorePath()), true);
+            Credentials credentials = WalletUtils.loadCredentials(encoded, bankConfig.getWallet().getKeystorePath() + "/" + filename);
             String address = credentials.getAddress();
 
             AccountEntity accountEntity =
@@ -115,7 +118,7 @@ public class AssetServiceImpl implements AssetService {
 
         BigInteger nonce = ethGetTransactionCount.getTransactionCount();
         BigInteger gasPrice = this.getGasPrice();
-        BigInteger gasLimit = bankConfig.getGasLimit();
+        BigInteger gasLimit = bankConfig.getGas().getLimit();
 
         RawTransaction rawTransaction = RawTransaction.createEtherTransaction(nonce, gasPrice, gasLimit, to, amount.toBigInteger());
         byte[] signedMessage = TransactionEncoder.signMessage(rawTransaction, credentials);
@@ -128,9 +131,9 @@ public class AssetServiceImpl implements AssetService {
     @Override
     public String deposit(AccountEntity from, BigDecimal amount) {
         try {
-            Credentials credentials = WalletUtils.loadCredentials(from.getEncodedPassword(), bankConfig.getKeystorePath() + "/" + from.getFilename());
+            Credentials credentials = WalletUtils.loadCredentials(from.getEncodedPassword(), bankConfig.getWallet().getKeystorePath() + "/" + from.getFilename());
 
-            String transactionHash = transfer(credentials, bankConfig.getWithdrawWallet().getAddress(), amount);
+            String transactionHash = transfer(credentials, withdrawWallet.getAddress(), amount);
             log.info("deposit ether: from address={}, txHash = {}", credentials.getAddress(), transactionHash);
             return transactionHash;
         } catch (Exception ex) {
@@ -142,19 +145,17 @@ public class AssetServiceImpl implements AssetService {
     @Override
     public synchronized String withdraw(AccountEntity to, BigDecimal amount, BigDecimal fee) {
         try {
-            Credentials credentials = bankConfig.getWithdrawWallet();
-
             // Subtract balance for pending
             to.setBalance(to.getBalance().subtract(amount.add(fee)));
             accountService.save(to);
 
-            String transactionHash = transfer(credentials, to.getAddress(), amount);
+            String transactionHash = transfer(withdrawWallet, to.getAddress(), amount);
             log.info("withdraw ether: txHash = {}", transactionHash);
 
             transactionService.save(TransactionEntity.builder()
                     .txHash(transactionHash)
                     .amount(amount.toString())
-                    .fromAddress(credentials.getAddress())
+                    .fromAddress(withdrawWallet.getAddress())
                     .toAddress(to.getAddress())
                     .build());
 

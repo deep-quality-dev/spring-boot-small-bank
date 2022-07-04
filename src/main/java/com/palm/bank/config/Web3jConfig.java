@@ -15,15 +15,15 @@ import java.util.concurrent.TimeUnit;
 public class Web3jConfig {
 
     @Bean("web3j")
-    @ConditionalOnProperty(name = "bank.keystore-path")
+    @ConditionalOnProperty(name = "bank.wallet.keystore-path")
     public Web3j web3j(BankConfig config) {
-        log.info("rpc: {}", config.getRpc());
+        log.info("rpc: {}", config.getHttp().getRpc());
 
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
-        builder.connectTimeout(30 * 1000, TimeUnit.MILLISECONDS);
-        builder.readTimeout(30 * 1000, TimeUnit.MILLISECONDS);
-        builder.writeTimeout(30 * 1000, TimeUnit.MILLISECONDS);
+        builder.connectTimeout(config.getHttp().getConnectTimeout(), TimeUnit.MILLISECONDS);
+        builder.readTimeout(config.getHttp().getReadTimeout(), TimeUnit.MILLISECONDS);
+        builder.writeTimeout(config.getHttp().getWriteTimeout(), TimeUnit.MILLISECONDS);
         OkHttpClient client = builder.build();
-        return Web3j.build(new HttpService(config.getRpc(), client, false));
+        return Web3j.build(new HttpService(config.getHttp().getRpc(), client, false));
     }
 }

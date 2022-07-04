@@ -2,6 +2,7 @@ package com.palm.bank.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.web3j.crypto.CipherException;
@@ -22,36 +23,74 @@ public class BankConfig {
      */
     private String tokenSecret;
 
-    private String rpc;
-
-    private String keystorePath;
-
     /**
      * Fee in percent, 100% in 10000
      */
     private Integer feeInPercent;
 
-    /**
-     * Increase gas fee per every transactions
-     */
-    private Integer gasSpeedUp;
+    private HttpConfig http;
 
-    /**
-     * Gas limit
-     */
-    private BigInteger gasLimit;
+    private GasConfig gas;
 
-    /**
-     * Keystore path to withdraw wallet
-     */
-    private String withdrawWalletKeystore;
+    private WalletConfig wallet;
 
-    /**
-     * Password to keystore file of withdraw wallet
-     */
-    private String withdrawWalletPassword;
+    @Bean("withdrawWallet")
+    public Credentials getWithdrawWallet(BankConfig bankConfig) throws IOException, CipherException {
+        return WalletUtils.loadCredentials(bankConfig.getWallet().getWithdrawWalletPassword(),
+                bankConfig.getWallet().getWithdrawWalletKeystore());
+    }
 
-    public Credentials getWithdrawWallet() throws IOException, CipherException {
-        return WalletUtils.loadCredentials(withdrawWalletPassword, withdrawWalletKeystore);
+    @Data
+    public static class HttpConfig {
+        /**
+         * RPC url of endpoint node
+         */
+        private String rpc;
+
+        /**
+         * Connect timeout to http connection
+         */
+        private Integer connectTimeout;
+
+        /**
+         * Read timeout to http connection
+         */
+        private Integer readTimeout;
+
+        /**
+         * Write timeout to http connection
+         */
+        private Integer writeTimeout;
+    }
+
+    @Data
+    public static class GasConfig {
+        /**
+         * Increase gas fee per every transactions
+         */
+        private Integer speedUp;
+
+        /**
+         * Gas limit
+         */
+        private BigInteger limit;
+    }
+
+    @Data
+    public static class WalletConfig {
+        /**
+         * Keystore path to all the wallets
+         */
+        private String keystorePath;
+
+        /**
+         * Keystore path to withdraw wallet
+         */
+        private String withdrawWalletKeystore;
+
+        /**
+         * Password to keystore file of withdraw wallet
+         */
+        private String withdrawWalletPassword;
     }
 }

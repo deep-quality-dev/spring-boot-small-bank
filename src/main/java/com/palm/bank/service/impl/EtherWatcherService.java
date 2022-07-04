@@ -7,6 +7,7 @@ import com.palm.bank.service.AssetService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameterNumber;
 import org.web3j.protocol.core.methods.response.EthBlock;
@@ -22,33 +23,27 @@ public class EtherWatcherService {
 
     private final BankConfig bankConfig;
 
+    private final Credentials withdrawWallet;
+
     private final Web3j web3j;
 
     private final AssetService assetService;
 
     private final DepositEvent depositEvent;
 
-    private final int CHECK_INTERVAL = 2000;
-
-    private String withdrawWallet;
-
     private Long currentBlockNumber = 0L;
     private int step = 5;
 
-    public EtherWatcherService(BankConfig bankConfig, Web3j web3j, AssetService assetService, DepositEvent depositEvent) {
+    public EtherWatcherService(BankConfig bankConfig, Credentials withdrawWallet, Web3j web3j, AssetService assetService, DepositEvent depositEvent) {
         this.bankConfig = bankConfig;
+        this.withdrawWallet = withdrawWallet;
         this.web3j = web3j;
         this.assetService = assetService;
         this.depositEvent = depositEvent;
 
         this.currentBlockNumber = getBlockNumber();
 
-        try {
-            this.withdrawWallet = bankConfig.getWithdrawWallet().getAddress();
-        } catch (Exception ex) {
-            this.withdrawWallet = null;
-        }
-        log.info("withdraw wallet = {}", this.withdrawWallet);
+        log.info("withdraw wallet = {}", this.withdrawWallet.getAddress());
     }
 
     @Scheduled(fixedDelay = 2000)
@@ -86,7 +81,7 @@ public class EtherWatcherService {
                     EthBlock.TransactionObject transactionObject = (EthBlock.TransactionObject) transactionResult;
                     Transaction transaction = transactionObject.get();
                     // Check if transaction is transferring tokens to withdraw wallet
-                    if (transaction.getTo() != null && transaction.getTo().equalsIgnoreCase(withdrawWallet)) {
+                    if (transaction.getTo() != null && transaction.getTo().equalsIgnoreCase(withdrawWallet.getAddress())) {
                         // Add deposit events
                         TransactionEntity transactionEntity = TransactionEntity.builder()
                                 .txHash(transaction.getHash())
@@ -94,7 +89,7 @@ public class EtherWatcherService {
                                 .blockHash(transaction.getBlockHash())
                                 .amount(transaction.getValue().toString())
                                 .fromAddress(transaction.getFrom())
-                                .toAddress(withdrawWallet)
+                                .toAddress(withdrawWallet.getAddress())
                                 .build();
                         deposits.add(transactionEntity);
                         log.info("received deposit at block: txHash={}, from={}, to={}, amount={}, blockNumber={}",
