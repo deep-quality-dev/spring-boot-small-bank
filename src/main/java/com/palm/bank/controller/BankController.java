@@ -61,8 +61,7 @@ public class BankController {
      * @throws IOException
      */
     @PostMapping("/create-account")
-    public ApiResult<CreateAccountDto> createAccount(@Validated @RequestBody CreateAccountParam param)
-            throws CipherException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException, IOException {
+    public ApiResult<CreateAccountDto> createAccount(@Validated @RequestBody CreateAccountParam param) {
         log.info("create account: name={}, password={}", param.getName(), param.getPassword());
 
         try {
@@ -114,7 +113,7 @@ public class BankController {
      * @throws IOException
      */
     @GetMapping("/balance/{address}")
-    public ApiResult<String> getBalance(@PathVariable String address) throws IOException {
+    public ApiResult<String> getBalance(@PathVariable String address) {
         try {
             BigDecimal balance = assetService.getBalance(address);
             // Convert balance to Ether unit
@@ -133,7 +132,7 @@ public class BankController {
      * @throws IOException
      */
     @GetMapping("/internal-balance")
-    public ApiResult<String> getInternalBalance(HttpServletRequest request) throws IOException {
+    public ApiResult<String> getInternalBalance(HttpServletRequest request) {
         try {
             String username = JwtTokenUtil.getUsername(request);
             AccountEntity accountEntity = accountService.findByName(username);
@@ -150,7 +149,7 @@ public class BankController {
     }
 
     @GetMapping("/transactions")
-    public ApiResult<List<TransactionDto>> getTransactions(HttpServletRequest request) throws IOException {
+    public ApiResult<List<TransactionDto>> getTransactions(HttpServletRequest request) {
         try {
             String username = JwtTokenUtil.getUsername(request);
             AccountEntity accountEntity = accountService.findByName(username);
