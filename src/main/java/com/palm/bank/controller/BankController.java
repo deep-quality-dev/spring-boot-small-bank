@@ -75,7 +75,7 @@ public class BankController {
             accountEntity = assetService.createNewWallet(param.getName(), param.getPassword());
             return ApiResult.result(ApiCode.SUCCESS, CreateAccountDto.builder().address(accountEntity.getAddress()).build());
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error(ex.toString());
             return ApiResult.internalError();
         }
     }
@@ -89,17 +89,22 @@ public class BankController {
     public ApiResult<List<AccountDto>> getAccounts() {
         log.info("accounts");
 
-        return ApiResult.result(
-                ApiCode.SUCCESS,
-                accountService.findAll()
-                        .stream().map(
-                        accountEntity ->
-                                AccountDto.builder()
-                                        .name(accountEntity.getName())
-                                        .address(accountEntity.getAddress())
-                                        .balance(Convert.fromWei(accountEntity.getBalance(), Convert.Unit.ETHER).toString())
-                                        .build()
-                ).collect(Collectors.toList()));
+        try {
+            return ApiResult.result(
+                    ApiCode.SUCCESS,
+                    accountService.findAll()
+                            .stream().map(
+                            accountEntity ->
+                                    AccountDto.builder()
+                                            .name(accountEntity.getName())
+                                            .address(accountEntity.getAddress())
+                                            .balance(Convert.fromWei(accountEntity.getBalance(), Convert.Unit.ETHER).toString())
+                                            .build()
+                    ).collect(Collectors.toList()));
+        } catch (Exception ex) {
+            log.error(ex.toString());
+            return ApiResult.internalError();
+        }
     }
 
     /**
@@ -111,9 +116,14 @@ public class BankController {
      */
     @GetMapping("/balance/{address}")
     public ApiResult<String> getBalance(@PathVariable String address) throws IOException {
-        BigDecimal balance = assetService.getBalance(address);
-        // Convert balance to Ether unit
-        return ApiResult.result(ApiCode.SUCCESS, Convert.fromWei(balance, Convert.Unit.ETHER).toString());
+        try {
+            BigDecimal balance = assetService.getBalance(address);
+            // Convert balance to Ether unit
+            return ApiResult.result(ApiCode.SUCCESS, Convert.fromWei(balance, Convert.Unit.ETHER).toString());
+        } catch (Exception ex) {
+            log.error(ex.toString());
+            return ApiResult.internalError();
+        }
     }
 
     /**
@@ -135,7 +145,7 @@ public class BankController {
             // Convert balance to Ether unit
             return ApiResult.result(ApiCode.SUCCESS, Convert.fromWei(accountEntity.getBalance(), Convert.Unit.ETHER).toString());
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error(ex.toString());
             return ApiResult.internalError();
         }
     }
@@ -158,7 +168,7 @@ public class BankController {
                             .build()
             ).collect(Collectors.toList()));
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error(ex.toString());
             return ApiResult.internalError();
         }
 
@@ -201,7 +211,7 @@ public class BankController {
             String txHash = assetService.internalTransfer(fromAccount, toAccount, amount, fee);
             return ApiResult.result(ApiCode.SUCCESS, TransactionDto.builder().txHash(txHash).build());
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error(ex.toString());
             return ApiResult.internalError();
         }
     }
@@ -235,7 +245,7 @@ public class BankController {
             String txHash = assetService.deposit(accountEntity, amount);
             return ApiResult.result(ApiCode.SUCCESS, TransactionDto.builder().txHash(txHash).build());
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error(ex.toString());
             return ApiResult.internalError();
         }
     }
@@ -271,7 +281,7 @@ public class BankController {
             String txHash = assetService.withdraw(accountEntity, amount, fee);
             return ApiResult.result(ApiCode.SUCCESS, TransactionDto.builder().txHash(txHash).build());
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error(ex.toString());
             return ApiResult.internalError();
         }
     }

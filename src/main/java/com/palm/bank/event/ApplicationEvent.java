@@ -25,7 +25,7 @@ public class ApplicationEvent implements ApplicationListener<ContextRefreshedEve
             etherWatcher.setCurrentBlockNumber(etherWatcher.getBlockNumber());
             new Thread(etherWatcher).start();
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error(ex.toString());
         }
     }
 }

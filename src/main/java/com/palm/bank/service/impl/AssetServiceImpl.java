@@ -89,7 +89,7 @@ public class AssetServiceImpl implements AssetService {
             }
             return null;
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error(ex.toString());
             return null;
         }
     }
@@ -135,8 +135,7 @@ public class AssetServiceImpl implements AssetService {
             log.info("deposit ether: from address={}, txHash = {}", credentials.getAddress(), transactionHash);
             return transactionHash;
         } catch (Exception ex) {
-            ex.printStackTrace();
-
+            log.error(ex.toString());
             return null;
         }
     }
@@ -162,7 +161,7 @@ public class AssetServiceImpl implements AssetService {
 
             return transactionHash;
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error(ex.toString());
 
             // Recover balance if failed
             to.setBalance(to.getBalance().add(amount.add(fee)));

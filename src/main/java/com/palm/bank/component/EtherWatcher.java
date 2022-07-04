@@ -85,7 +85,7 @@ public class EtherWatcher implements Runnable {
                 }
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error(ex.toString());
         }
     }
 
@@ -127,7 +127,7 @@ public class EtherWatcher implements Runnable {
                 });
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error(ex.toString());
         }
         return deposits;
     }
