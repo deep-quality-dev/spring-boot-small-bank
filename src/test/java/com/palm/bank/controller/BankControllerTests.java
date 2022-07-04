@@ -46,6 +46,8 @@ public class BankControllerTests {
 
     private String name = "name", password = "password", address = "address";
     private AccountEntity accountEntity;
+    private String name2 = "name", password2 = "password", address2 = "address";
+    private AccountEntity accountEntity2;
 
     private String authorization;
 
@@ -57,6 +59,14 @@ public class BankControllerTests {
                 .filename("filename")
                 .balance("0")
                 .address(address)
+                .build();
+
+        accountEntity2 = AccountEntity.builder()
+                .name(name2)
+                .encodedPassword(bCryptPasswordEncoder.encode(password2))
+                .filename("filename2")
+                .balance("0")
+                .address(address2)
                 .build();
     }
 
@@ -130,5 +140,47 @@ public class BankControllerTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value("SUCCESS"))
                 .andExpect(jsonPath("$.data").value("0"));
+    }
+
+    @Test
+    @Order(4)
+    public void notFoundAccount() throws Exception {
+        Assert.assertNotNull(authorization);
+
+        this.mockMvc.perform(get("/v1/bank/transfer")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", authorization))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("NOT_FOUND_ACCOUNT"));
+    }
+
+    @Test
+    @Order(5)
+    public void notRegisteredAccountOnTransfer() throws Exception {
+        Assert.assertNotNull(authorization);
+        when(accountService.findByName(name)).thenReturn(accountEntity);
+
+        this.mockMvc.perform(get(String.format("/v1/bank/transfer?to=%s&amount=%d", accountEntity2.getAddress(), 1))
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", authorization))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("NOT_REGISTERED_ACCOUNT"));
+    }
+
+    @Test
+    @Order(6)
+    public void notEnoughBalanceOnTransfer() throws Exception {
+        Assert.assertNotNull(authorization);
+        when(accountService.findByName(name)).thenReturn(accountEntity);
+        when(accountService.findByAddress(address2)).thenReturn(accountEntity2);
+
+        this.mockMvc.perform(get(String.format("/v1/bank/transfer?to=%s&amount=%d", accountEntity2.getAddress(), 1))
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", authorization))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("NOT_ENOUGH_BALANCE"));
     }
 }

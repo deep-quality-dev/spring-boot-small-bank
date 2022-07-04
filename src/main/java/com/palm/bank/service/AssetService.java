@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.util.concurrent.ExecutionException;
 
 @Service
 public interface AssetService {
@@ -54,7 +55,7 @@ public interface AssetService {
      * @param amount in wei unit
      * @return
      */
-    String deposit(AccountEntity from, BigDecimal amount);
+    String deposit(AccountEntity from, BigDecimal amount) throws IOException, CipherException, ExecutionException, InterruptedException;
 
     /**
      * Withdraw tokens, refer: BankController.withdraw

@@ -10,10 +10,7 @@ import com.palm.bank.util.TokenGenerator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.web3j.crypto.Credentials;
-import org.web3j.crypto.RawTransaction;
-import org.web3j.crypto.TransactionEncoder;
-import org.web3j.crypto.WalletUtils;
+import org.web3j.crypto.*;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.response.EthGasPrice;
@@ -26,6 +23,9 @@ import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.util.Date;
 import java.util.concurrent.ExecutionException;
 
@@ -68,36 +68,35 @@ public class AssetServiceImpl implements AssetService {
     }
 
     @Override
-    public AccountEntity createNewWallet(String name, String password) {
-        try {
-            String encoded = bCryptPasswordEncoder.encode(password);
+    public AccountEntity createNewWallet(String name, String password) throws NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException, CipherException, IOException {
+        String encoded = bCryptPasswordEncoder.encode(password);
 
-            String filename = WalletUtils.generateNewWalletFile(encoded, new File(bankConfig.getWallet().getKeystorePath()), true);
-            Credentials credentials = WalletUtils.loadCredentials(encoded, bankConfig.getWallet().getKeystorePath() + "/" + filename);
-            String address = credentials.getAddress();
+        String filename = WalletUtils.generateNewWalletFile(encoded, new File(bankConfig.getWallet().getKeystorePath()), true);
+        Credentials credentials = WalletUtils.loadCredentials(encoded, bankConfig.getWallet().getKeystorePath() + "/" + filename);
+        String address = credentials.getAddress();
 
-            AccountEntity accountEntity =
-                    AccountEntity.builder()
-                            .name(name)
-                            .encodedPassword(encoded) // Password should be stored as encrypted
-                            .filename(filename)
-                            .address(address)
-                            .balance(BigDecimal.ZERO.toString())
-                            .build();
+        AccountEntity accountEntity =
+                AccountEntity.builder()
+                        .name(name)
+                        .encodedPassword(encoded) // Password should be stored as encrypted
+                        .filename(filename)
+                        .address(address)
+                        .balance(BigDecimal.ZERO.toString())
+                        .build();
 
-            log.info("new account: name={}, filename={}, address={}, password={}, encoded={}", name, filename, address, password, encoded);
-            if (accountService.save(accountEntity)) {
-                return accountEntity;
-            }
-            return null;
-        } catch (Exception ex) {
-            log.error(ex.toString());
-            return null;
+        log.info("new account: name={}, filename={}, address={}, password={}, encoded={}", name, filename, address, password, encoded);
+        if (accountService.save(accountEntity)) {
+            return accountEntity;
         }
+        return null;
     }
 
     @Override
     public String internalTransfer(AccountEntity from, AccountEntity to, BigDecimal amount, BigDecimal fee) {
+        if (from.getBalance().compareTo(amount.add(fee)) < 0) {
+            return null;
+        }
+
         from.setBalance(from.getBalance().subtract(amount.add(fee)));
         to.setBalance(to.getBalance().add(amount));
         accountService.save(from);
@@ -129,22 +128,21 @@ public class AssetServiceImpl implements AssetService {
     }
 
     @Override
-    public String deposit(AccountEntity from, BigDecimal amount) {
-        try {
-            Credentials credentials = WalletUtils.loadCredentials(from.getEncodedPassword(), bankConfig.getWallet().getKeystorePath() + "/" + from.getFilename());
+    public String deposit(AccountEntity from, BigDecimal amount) throws IOException, CipherException, ExecutionException, InterruptedException {
+        Credentials credentials = WalletUtils.loadCredentials(from.getEncodedPassword(), bankConfig.getWallet().getKeystorePath() + "/" + from.getFilename());
 
-            String transactionHash = transfer(credentials, withdrawWallet.getAddress(), amount);
-            log.info("deposit ether: from address={}, txHash = {}", credentials.getAddress(), transactionHash);
-            return transactionHash;
-        } catch (Exception ex) {
-            log.error(ex.toString());
-            return null;
-        }
+        String transactionHash = transfer(credentials, withdrawWallet.getAddress(), amount);
+        log.info("deposit ether: from address={}, txHash = {}", credentials.getAddress(), transactionHash);
+        return transactionHash;
     }
 
     @Override
     public synchronized String withdraw(AccountEntity to, BigDecimal amount, BigDecimal fee) {
         try {
+            if (to.getBalance().compareTo(amount.add(fee)) < 0) {
+                return null;
+            }
+
             // Subtract balance for pending
             to.setBalance(to.getBalance().subtract(amount.add(fee)));
             accountService.save(to);

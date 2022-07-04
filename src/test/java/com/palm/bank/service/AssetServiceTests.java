@@ -92,6 +92,32 @@ public class AssetServiceTests {
         Assert.assertNotNull(hash);
     }
 
+    @Test
+    public void failOnInternalTransfer() {
+        doReturn(true)
+                .when(accountService)
+                .save(any(AccountEntity.class));
+
+        AccountEntity from = AccountEntity.builder()
+                .name("name")
+                .encodedPassword("password")
+                .address("address")
+                .filename("filename")
+                .balance("0")
+                .build();
+
+        AccountEntity to = AccountEntity.builder()
+                .name("name1")
+                .encodedPassword("password1")
+                .address("address1")
+                .filename("filename1")
+                .balance("0")
+                .build();
+
+        String hash = assetService.internalTransfer(from, to, BigDecimal.TEN.pow(18), BigDecimal.ZERO);
+        Assert.assertNull(hash);
+    }
+
     private void mockTransfer(String from, String mockTxHash, Function<String, Void> callback) throws IOException {
         // Mock GetTransactionCount
         Request mockRequestEthGetTransactionCount = mock(Request.class);
@@ -136,8 +162,13 @@ public class AssetServiceTests {
 
         try {
             mockTransfer(fromAccount.getAddress(), "txHash", (mockTxHash) -> {
-                String txHash = assetService.deposit(fromAccount, BigDecimal.TEN);
-                Assert.assertEquals(txHash, mockTxHash);
+                try {
+                    String txHash = assetService.deposit(fromAccount, BigDecimal.TEN);
+                    Assert.assertEquals(txHash, mockTxHash);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    Assert.fail();
+                }
                 return null;
             });
         } catch (Exception ex) {
@@ -160,6 +191,29 @@ public class AssetServiceTests {
             mockTransfer(withdrawWallet.getAddress(), "txHash", (mockTxHash) -> {
                 String txHash = assetService.withdraw(fromAccount, BigDecimal.TEN, BigDecimal.ONE);
                 Assert.assertEquals(txHash, mockTxHash);
+
+                Assert.assertEquals(fromAccount.getBalance(), BigDecimal.ZERO);
+                return null;
+            });
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        } finally {
+            Files.deleteIfExists(Paths.get(bankConfig.getWallet().getKeystorePath() + "/" + fromAccount.getFilename()));
+        }
+    }
+
+    @Test
+    public void failOnWithdraw() throws CipherException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException, IOException {
+        doReturn(true)
+                .when(accountService)
+                .save(any(AccountEntity.class));
+        AccountEntity fromAccount = assetService.createNewWallet("name", "password");
+
+        try {
+            // The balance of from Account is 0
+            mockTransfer(withdrawWallet.getAddress(), "txHash", (mockTxHash) -> {
+                String txHash = assetService.withdraw(fromAccount, BigDecimal.TEN, BigDecimal.ONE);
+                Assert.assertNull(txHash);
 
                 Assert.assertEquals(fromAccount.getBalance(), BigDecimal.ZERO);
                 return null;
