@@ -8,7 +8,6 @@ import com.palm.bank.service.AssetService;
 import com.palm.bank.service.TransactionService;
 import com.palm.bank.util.TokenGenerator;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.web3j.crypto.Credentials;

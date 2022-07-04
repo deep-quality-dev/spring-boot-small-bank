@@ -3,7 +3,6 @@ package com.palm.bank.service.impl;
 import com.palm.bank.entity.TransactionEntity;
 import com.palm.bank.repository.TransactionRepository;
 import com.palm.bank.service.TransactionService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

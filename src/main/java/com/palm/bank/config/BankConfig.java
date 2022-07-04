@@ -2,7 +2,8 @@ package com.palm.bank.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.web3j.crypto.CipherException;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.WalletUtils;
@@ -11,7 +12,8 @@ import java.io.IOException;
 import java.math.BigInteger;
 
 @Data
-@Component
+@EnableScheduling
+@Configuration
 @ConfigurationProperties(prefix = "bank")
 public class BankConfig {
 

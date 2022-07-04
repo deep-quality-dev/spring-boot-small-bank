@@ -5,7 +5,6 @@ import com.palm.bank.entity.TransactionEntity;
 import com.palm.bank.service.AccountService;
 import com.palm.bank.service.TransactionService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;

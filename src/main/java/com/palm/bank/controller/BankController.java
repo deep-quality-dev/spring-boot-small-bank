@@ -13,7 +13,6 @@ import com.palm.bank.service.AssetService;
 import com.palm.bank.service.TransactionService;
 import com.palm.bank.util.JwtTokenUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.web3j.crypto.CipherException;

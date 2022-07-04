@@ -1,12 +1,12 @@
-package com.palm.bank.component;
+package com.palm.bank.service.impl;
 
 import com.palm.bank.config.BankConfig;
 import com.palm.bank.entity.TransactionEntity;
 import com.palm.bank.event.DepositEvent;
 import com.palm.bank.service.AssetService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameterNumber;
 import org.web3j.protocol.core.methods.response.EthBlock;
@@ -17,8 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
-@Component
-public class EtherWatcher implements Runnable {
+@Service
+public class EtherWatcherService {
 
     private final BankConfig bankConfig;
 
@@ -35,11 +35,13 @@ public class EtherWatcher implements Runnable {
     private Long currentBlockNumber = 0L;
     private int step = 5;
 
-    public EtherWatcher(BankConfig bankConfig, Web3j web3j, AssetService assetService, DepositEvent depositEvent) {
+    public EtherWatcherService(BankConfig bankConfig, Web3j web3j, AssetService assetService, DepositEvent depositEvent) {
         this.bankConfig = bankConfig;
         this.web3j = web3j;
         this.assetService = assetService;
         this.depositEvent = depositEvent;
+
+        this.currentBlockNumber = getBlockNumber();
 
         try {
             this.withdrawWallet = bankConfig.getWithdrawWallet().getAddress();
@@ -49,29 +51,7 @@ public class EtherWatcher implements Runnable {
         log.info("withdraw wallet = {}", this.withdrawWallet);
     }
 
-    public void setCurrentBlockNumber(Long blockNumber) {
-        this.currentBlockNumber = blockNumber;
-    }
-
-    @Override
-    public void run() {
-        long nextCheck = 0;
-        while (!Thread.interrupted()) {
-            if (nextCheck <= System.currentTimeMillis()) {
-                try {
-                    nextCheck = System.currentTimeMillis() + CHECK_INTERVAL;
-                    check();
-                } catch (Exception ex) {
-                }
-            } else {
-                try {
-                    Thread.sleep(Math.max(System.currentTimeMillis() - nextCheck, 100));
-                } catch (InterruptedException ex) {
-                }
-            }
-        }
-    }
-
+    @Scheduled(fixedDelay = 2000)
     public void check() {
         try {
             long blockNumber = getBlockNumber();
@@ -132,7 +112,7 @@ public class EtherWatcher implements Runnable {
         return deposits;
     }
 
-    public Long getBlockNumber() {
+    private Long getBlockNumber() {
         try {
             EthBlockNumber blockNumber = web3j.ethBlockNumber().send();
             return blockNumber.getBlockNumber().longValue();

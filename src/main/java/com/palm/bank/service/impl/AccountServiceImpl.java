@@ -4,7 +4,6 @@ import com.palm.bank.config.BankConfig;
 import com.palm.bank.entity.AccountEntity;
 import com.palm.bank.repository.AccountRepository;
 import com.palm.bank.service.AccountService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
